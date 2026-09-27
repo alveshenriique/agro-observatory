@@ -1,12 +1,12 @@
 import json
-from datetime import UTC, datetime
 from pathlib import Path
 
 import pyarrow.parquet as pq
 import pytest
 
 from agro_observatory.ingestion import pam
-from agro_observatory.ingestion.pam import CROPS, InvalidResponseError, Task
+from agro_observatory.ingestion.common import InvalidResponseError
+from agro_observatory.ingestion.pam import CROPS, Task
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sidra_pam_corn_2024.json"
 CORN_2024 = Task(CROPS["corn"], 2024)
@@ -41,17 +41,6 @@ def test_parse_response_rejects_rows_from_another_year(payload) -> None:
 def test_parse_response_rejects_malformed_payload(bad) -> None:
     with pytest.raises(InvalidResponseError):
         pam.parse_response(bad, CORN_2024)
-
-
-def test_to_table_adds_ingestion_metadata(payload) -> None:
-    rows = pam.parse_response(payload, CORN_2024)
-    ingested_at = datetime(2026, 1, 1, tzinfo=UTC)
-
-    table = pam.to_table(rows, "http://example", ingested_at)
-
-    assert table.column_names == [*pam.SOURCE_COLUMNS, "_source_url", "_ingested_at"]
-    assert table.schema.field("V").type == "string"
-    assert set(table.column("_source_url").to_pylist()) == {"http://example"}
 
 
 def test_plan_tasks_respects_first_year_and_filters() -> None:

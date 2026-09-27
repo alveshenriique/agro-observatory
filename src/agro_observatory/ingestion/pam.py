@@ -7,7 +7,6 @@ returned by the API (text, including special symbols such as "-" and "...").
 
 import argparse
 import logging
-import os
 import sys
 import time
 from collections.abc import Callable, Iterable
@@ -16,10 +15,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import pyarrow as pa
-import pyarrow.parquet as pq
-
 from agro_observatory.http_client import HttpClient
+from agro_observatory.ingestion.common import (
+    InvalidResponseError,
+    configure_logging,
+    raw_table,
+    write_parquet_atomic,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +67,6 @@ class Task:
     year: int
 
 
-class InvalidResponseError(ValueError):
-    pass
-
-
 def build_url(crop: Crop, year: int) -> str:
     variables = ",".join(str(v) for v in VARIABLE_IDS)
     return (
@@ -96,23 +94,8 @@ def parse_response(payload: Any, task: Task) -> list[dict[str, str]]:
     return rows
 
 
-def to_table(rows: list[dict[str, str]], source_url: str, ingested_at: datetime) -> pa.Table:
-    columns = {name: pa.array([row[name] for row in rows], pa.string()) for name in SOURCE_COLUMNS}
-    columns["_source_url"] = pa.array([source_url] * len(rows), pa.string())
-    columns["_ingested_at"] = pa.array([ingested_at] * len(rows), pa.timestamp("us", tz="UTC"))
-    return pa.table(columns)
-
-
 def partition_path(output_dir: Path, task: Task) -> Path:
     return output_dir / f"crop={task.crop.slug}" / f"year={task.year}" / "data.parquet"
-
-
-def write_parquet_atomic(table: pa.Table, path: Path) -> None:
-    """Write to a temporary file and rename, so an interrupted run never leaves a partial file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(".parquet.tmp")
-    pq.write_table(table, tmp_path)
-    os.replace(tmp_path, path)
 
 
 def plan_tasks(
@@ -160,7 +143,7 @@ def run(
             payload = fetch_json(url)
             ingested_at = datetime.now(UTC)
             rows = parse_response(payload, task)
-            write_parquet_atomic(to_table(rows, url, ingested_at), path)
+            write_parquet_atomic(raw_table(rows, SOURCE_COLUMNS, url, ingested_at), path)
         except Exception:
             logger.exception("%s: failed", prefix)
             counts["failed"] += 1
@@ -189,8 +172,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    logging.getLogger("httpx").setLevel(logging.WARNING)
+    configure_logging()
     args = parse_args(argv)
     crops = [CROPS[slug] for slug in args.crops] if args.crops else list(CROPS.values())
 
