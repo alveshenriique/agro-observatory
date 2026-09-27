@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_bcb__ipca
+    description: IPCA, variação mensal em % (SGS 433), um registro por mês.
+    columns:
+      - name: reference_month
+        description: Primeiro dia do mês de referência.
+        data_tests:
+          - unique
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "= date_trunc('month', reference_month)::date"
+      - name: monthly_change_pct
+        description: "Variação mensal do IPCA em %. Exemplo: 0.16 significa 0,16% no mês."
+        data_tests: [not_null]

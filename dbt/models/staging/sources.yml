@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Camada raw carregada pelo `load-raw` a partir dos Parquet em data/raw. As colunas da fonte
+      estão em texto, com os nomes exatos das APIs (case-sensitive, alguns com hífen), mais os
+      metadados `_source_url`, `_ingested_at`, `_source_file` e `_loaded_at`.
+    schema: raw
+    tables:
+      - name: pam
+        description: >
+          IBGE, Produção Agrícola Municipal (SIDRA, tabela 5457), um registro por município ×
+          produto × ano × variável. `V` traz o valor como texto, incluindo os símbolos especiais
+          do IBGE ("-", "0", "...", "..", "X").
+        columns:
+          - name: D1C
+            description: Código IBGE do município (7 dígitos).
+          - name: D2C
+            description: Código da variável (8331, 216, 214, 112, 215).
+          - name: D3C
+            description: Ano.
+          - name: D4C
+            description: Código do produto na classificação 782.
+          - name: V
+            description: Valor como retornado pela API, em texto.
+          - name: MN
+            description: Unidade de medida da variável.
+
+      - name: localities
+        description: >
+          IBGE, API de Localidades: snapshot da malha municipal atual, com a hierarquia achatada
+          em colunas nomeadas pelo caminho da API (ex.: `microrregiao__mesorregiao__UF__sigla`).
+        columns:
+          - name: id
+            description: Código IBGE do município (7 dígitos).
+
+      - name: ipca
+        description: Banco Central, SGS série 433, IPCA com variação mensal (% ao mês).
+        columns:
+          - name: data
+            description: Mês de referência no formato dd/mm/aaaa, sempre no dia 01.
+          - name: valor
+            description: Variação mensal em %, com ponto decimal.

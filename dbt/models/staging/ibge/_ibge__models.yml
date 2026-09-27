@@ -1,0 +1,105 @@
+version: 2
+
+models:
+  - name: stg_ibge__pam
+    description: >
+      PAM (SIDRA 5457) tipada, no grão da fonte: município × produto × ano × variável.
+      Os símbolos especiais do IBGE viram `value` (0 ou nulo) e `value_status`, que preserva a
+      diferença entre zero real e dado ausente.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, product_id, year, variable_id]
+      - dbt_utils.expression_is_true:
+          arguments:
+            # value must be null exactly when the status says there is no number.
+            expression: >-
+              (value is null)
+              = (value_status in ('not_available', 'not_applicable', 'confidential'))
+    columns:
+      - name: municipality_id
+        description: Código IBGE do município (7 dígitos).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ibge__localities')
+                field: municipality_id
+      - name: product_id
+        description: Código do produto na classificação 782 do SIDRA.
+        data_tests: [not_null]
+      - name: crop
+        description: Nome da cultura, igual ao usado na ingestão (partição `crop=`).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [soybean, corn, coffee_total, coffee_arabica, coffee_canephora]
+      - name: year
+        data_tests: [not_null]
+      - name: variable_id
+        description: Código da variável no SIDRA.
+        data_tests: [not_null]
+      - name: variable
+        description: Nome da variável em inglês.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - planted_area
+                  - harvested_area
+                  - production_quantity
+                  - average_yield
+                  - production_value
+      - name: unit
+        description: >
+          Unidade da variável como publicada (Hectares, Toneladas, Quilogramas por Hectare, e
+          moeda da época no valor da produção: Mil Cruzeiros, Mil Reais etc.). Nula quando o
+          valor não está disponível.
+      - name: value
+        description: Valor numérico. 0 para zero absoluto ou por arredondamento; nulo sem dado.
+      - name: value_status
+        description: >
+          reported (número publicado), absolute_zero ("-"), rounded_zero ("0"), not_available
+          ("..."), not_applicable (".."), confidential ("X", omitido por sigilo).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - reported
+                  - absolute_zero
+                  - rounded_zero
+                  - not_available
+                  - not_applicable
+                  - confidential
+      - name: raw_value
+        description: Valor original em texto, mantido para auditoria.
+
+  - name: stg_ibge__localities
+    description: >
+      Municípios da malha atual com a hierarquia territorial do IBGE: divisão regional atual
+      (regiões imediatas e intermediárias, 2017) e anterior (micro e mesorregiões, 1989).
+    columns:
+      - name: municipality_id
+        description: Código IBGE do município (7 dígitos), mesmo tipo de `stg_ibge__pam`.
+        data_tests: [unique, not_null]
+      - name: municipality_name
+        data_tests: [not_null]
+      - name: immediate_region_id
+        data_tests: [not_null]
+      - name: intermediate_region_id
+        data_tests: [not_null]
+      - name: microregion_id
+        description: Nulo para municípios criados depois da divisão de 1989.
+      - name: mesoregion_id
+        description: Nulo para municípios criados depois da divisão de 1989.
+      - name: state_id
+        data_tests: [not_null]
+      - name: state_abbreviation
+        data_tests: [not_null]
+      - name: region_id
+        data_tests: [not_null]
+      - name: mesoregion_state_id
+        description: UF segundo a divisão de 1989, mantida só para o teste de consistência.
