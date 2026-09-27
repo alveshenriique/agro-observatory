@@ -15,3 +15,9 @@ Alternativas descartadas. DuckDB é mais simples, mas o PostgreSQL tem conexão 
 A ingestão da PAM é idempotente: cada combinação de cultura e ano vira uma partição Parquet, e partições já existentes são puladas. A exceção são os 2 anos mais recentes disponíveis, que são sempre baixados de novo e sobrescritos. O IBGE revisa os dados da PAM depois da primeira divulgação, então pular esses anos congelaria números preliminares. O "ano mais recente" vem da API de metadados do IBGE a cada execução, e não de um valor fixo no código. Existe também a opção `--force`, que baixa tudo de novo.
 
 Alternativas descartadas. Pular toda partição existente deixaria a camada raw desatualizada sem nenhum aviso. Baixar tudo a cada execução garante dados atualizados, mas custa 184 requisições (de 30 a 60 minutos) para mudar, na prática, só os anos recentes. Comparar hashes do conteúdo exigiria baixar os dados de qualquer forma, então não economizaria requisições.
+
+### Localidades como snapshot da malha atual
+
+A lista de municípios, com UF, região, mesorregião/microrregião e região intermediária/imediata, é baixada da API de Localidades do IBGE como uma foto da malha territorial atual. Cada execução substitui a anterior, sem guardar versões. Isso funciona porque a PAM também publica toda a série histórica na malha atual (municípios criados depois aparecem como "..." nos anos anteriores), então os dois lados do cruzamento usam a mesma referência territorial.
+
+Alternativas descartadas. Guardar um histórico da malha (dimensão de mudança lenta, tipo 2) só teria valor se os fatos viessem em malhas diferentes a cada ano, o que não acontece aqui. O custo é que, se o IBGE redesenhar uma divisão regional, a mudança vale retroativamente para toda a série. Para acompanhar a evolução da malha seria preciso ingerir as tabelas de alterações territoriais do IBGE, o que foge do escopo do MVP.
