@@ -6,7 +6,13 @@ authors = [
     { name = "Henrique Alves", email = "henrique.a.campos@ufv.br" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "httpx>=0.28.1",
+    "pyarrow>=25.0.1",
+]
+
+[project.scripts]
+ingest-pam = "agro_observatory.ingestion.pam:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
