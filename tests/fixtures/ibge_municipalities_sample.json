@@ -1,0 +1,105 @@
+[
+ {
+  "id": 1100015,
+  "nome": "Alta Floresta D'Oeste",
+  "microrregiao": {
+   "id": 11006,
+   "nome": "Cacoal",
+   "mesorregiao": {
+    "id": 1102,
+    "nome": "Leste Rondoniense",
+    "UF": {
+     "id": 11,
+     "sigla": "RO",
+     "nome": "Rondônia",
+     "regiao": {
+      "id": 1,
+      "sigla": "N",
+      "nome": "Norte"
+     }
+    }
+   }
+  },
+  "regiao-imediata": {
+   "id": 110005,
+   "nome": "Cacoal",
+   "regiao-intermediaria": {
+    "id": 1102,
+    "nome": "Ji-Paraná",
+    "UF": {
+     "id": 11,
+     "sigla": "RO",
+     "nome": "Rondônia",
+     "regiao": {
+      "id": 1,
+      "sigla": "N",
+      "nome": "Norte"
+     }
+    }
+   }
+  }
+ },
+ {
+  "id": 3106200,
+  "nome": "Belo Horizonte",
+  "microrregiao": {
+   "id": 31030,
+   "nome": "Belo Horizonte",
+   "mesorregiao": {
+    "id": 3107,
+    "nome": "Metropolitana de Belo Horizonte",
+    "UF": {
+     "id": 31,
+     "sigla": "MG",
+     "nome": "Minas Gerais",
+     "regiao": {
+      "id": 3,
+      "sigla": "SE",
+      "nome": "Sudeste"
+     }
+    }
+   }
+  },
+  "regiao-imediata": {
+   "id": 310001,
+   "nome": "Belo Horizonte",
+   "regiao-intermediaria": {
+    "id": 3101,
+    "nome": "Belo Horizonte",
+    "UF": {
+     "id": 31,
+     "sigla": "MG",
+     "nome": "Minas Gerais",
+     "regiao": {
+      "id": 3,
+      "sigla": "SE",
+      "nome": "Sudeste"
+     }
+    }
+   }
+  }
+ },
+ {
+  "id": 5101837,
+  "nome": "Boa Esperança do Norte",
+  "microrregiao": null,
+  "regiao-imediata": {
+   "id": 510008,
+   "nome": "Sorriso",
+   "regiao-intermediaria": {
+    "id": 5103,
+    "nome": "Sinop",
+    "UF": {
+     "id": 51,
+     "sigla": "MT",
+     "nome": "Mato Grosso",
+     "regiao": {
+      "id": 5,
+      "sigla": "CO",
+      "nome": "Centro-Oeste"
+     }
+    }
+   }
+  }
+ }
+]

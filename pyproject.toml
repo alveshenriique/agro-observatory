@@ -13,6 +13,8 @@ dependencies = [
 
 [project.scripts]
 ingest-pam = "agro_observatory.ingestion.pam:main"
+ingest-localities = "agro_observatory.ingestion.localities:main"
+ingest-ipca = "agro_observatory.ingestion.ipca:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
