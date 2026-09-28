@@ -1,0 +1,110 @@
+version: 2
+
+models:
+  - name: agg_production_growth_decomposition
+    description: >
+      Decomposição logarítmica do crescimento da produção em efeito área e efeito rendimento:
+      ln(P1/P0) = ln(A1/A0) + ln(Y1/Y0), com Y = P / A (área colhida). Cada período é a média de
+      3 anos em torno de um ano-âncora (1975, 1985, 1995, 2005, 2015 e 2024). Compara períodos
+      consecutivos e o intervalo completo (1975 → 2024), para Brasil e macrorregiões. Café pelo
+      total (o detalhamento só existe a partir de 2012).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, territory_id, start_anchor, end_anchor]
+      - dbt_utils.expression_is_true:
+          arguments:
+            # The decomposition must close exactly (up to floating-point error).
+            expression: "abs(ln_production_growth - (ln_area_effect + ln_yield_effect)) < 1e-9"
+          config:
+            where: "ln_production_growth is not null"
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [country, macro_region]
+      - name: start_share_of_national_production
+        description: Participação do território na produção nacional da cultura no período inicial.
+      - name: is_low_base
+        description: >
+          Verdadeiro quando o período inicial tinha menos de 1% da produção nacional da cultura
+          (var `low_base_share_threshold`). O crescimento em log é correto, mas enorme, porque a
+          cultura praticamente começou do zero; filtrar no Power BI para comparar regiões.
+        data_tests: [not_null]
+      - name: ln_area_effect
+        description: Parte do crescimento (em log) explicada pela variação da área colhida.
+      - name: ln_yield_effect
+        description: Parte do crescimento (em log) explicada pela variação do rendimento.
+      - name: area_share_of_growth
+        description: >
+          Fração do crescimento explicada pela área. Pode sair de [0, 1] quando um dos efeitos é
+          negativo (ex.: área cai e rendimento sobe).
+
+  - name: agg_production_share_by_territory
+    description: >
+      Participação de cada UF e de cada região intermediária na produção nacional, por cultura
+      e ano, numa grade completa (território sem produção no ano aparece com 0).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, year, territory_level, territory_id]
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [state, intermediate_region]
+      - name: share_of_national_production
+        description: Participação na produção nacional (0 a 1).
+
+  - name: agg_territory_share_thresholds
+    description: >
+      Ano em que cada território atingiu 1% e 5% da produção nacional, por cultura.
+      `first_year_reached` é o primeiro ano acima do limiar (pode ser um pico isolado);
+      `first_year_sustained` é o ano a partir do qual a participação nunca mais caiu abaixo dele.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, territory_level, territory_id, threshold]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "first_year_sustained is null or first_year_sustained >= first_year_reached"
+
+  - name: agg_production_concentration
+    description: >
+      Concentração da produção entre municípios, por cultura e ano: quantos municípios somam
+      50% e 80% da produção nacional e o índice Herfindahl-Hirschman (HHI, escala 0–10.000).
+      A contagem de municípios é afetada por desmembramentos; o HHI é mais robusto a eles.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              municipalities_for_50pct <= municipalities_for_80pct
+              and municipalities_for_80pct <= producing_municipalities
+              and hhi > 0 and hhi <= 10000
+    columns:
+      - name: hhi
+        description: >
+          Soma dos quadrados das participações em %. 10.000 = um só município produz tudo;
+          valores baixos = produção espalhada.
+
+  - name: agg_coffee_mg_biennial
+    description: >
+      Produção de café em Minas Gerais, para identificar a bienalidade do arábica. Séries:
+      coffee_arabica (desde 2012) e coffee_total (série longa, como aproximação). A tendência é
+      uma média móvel centrada 2x2 (pesos 1/4, 1/2, 1/4), que elimina exatamente um ciclo de 2
+      anos; `ratio_to_trend` > 1 indica ano de alta e < 1 ano de baixa.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, year]
+    columns:
+      - name: cycle_phase
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [on_year, off_year]

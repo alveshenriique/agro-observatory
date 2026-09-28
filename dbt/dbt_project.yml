@@ -13,6 +13,9 @@ vars:
   deflation_base_year: 2025
   # First year with production value in reais and stable prices (after the Plano Real).
   real_value_first_year: 1995
+  # Growth decomposition pairs whose start period had less than this share of the crop's
+  # national production are flagged as low base.
+  low_base_share_threshold: 0.01
 
 flags:
   send_anonymous_usage_stats: false
