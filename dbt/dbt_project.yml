@@ -4,7 +4,15 @@ profile: agro_observatory
 
 model-paths: ["models"]
 macro-paths: ["macros"]
+seed-paths: ["seeds"]
 test-paths: ["tests"]
+
+vars:
+  # Real values are expressed at this year's prices. Fixed on purpose: moving it silently
+  # would change every real value in the marts.
+  deflation_base_year: 2025
+  # First year with production value in reais and stable prices (after the Plano Real).
+  real_value_first_year: 1995
 
 flags:
   send_anonymous_usage_stats: false
@@ -14,3 +22,13 @@ models:
     staging:
       +materialized: view
       +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  agro_observatory:
+    +schema: seeds

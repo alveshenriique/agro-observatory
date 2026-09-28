@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: int_pam__crop_year
+    description: >
+      PAM no grão município × cultura × ano, com uma coluna por variável e o status de cada
+      uma. `has_data` é falso quando todas as variáveis são "..." ou "..".
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop, year]
+    columns:
+      - name: has_data
+        data_tests: [not_null]
+
+  - name: int_bcb__ipca_annual
+    description: >
+      Nível de preços anual do IPCA (média dos 12 números-índice mensais, encadeados a partir
+      da variação mensal) e deflator para o ano-base da variável `deflation_base_year`.
+    columns:
+      - name: year
+        data_tests: [unique, not_null]
+      - name: deflator_to_base_year
+        description: Multiplicador que leva um valor do ano para preços do ano-base.
+        data_tests: [not_null]

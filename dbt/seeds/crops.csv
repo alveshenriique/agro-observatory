@@ -1,0 +1,6 @@
+crop,product_id,crop_name_pt,is_coffee_breakdown
+soybean,40124,Soja (em grão),false
+corn,40122,Milho (em grão),false
+coffee_total,40139,Café (em grão) Total,false
+coffee_arabica,40140,Café (em grão) Arábica,true
+coffee_canephora,40141,Café (em grão) Canephora,true

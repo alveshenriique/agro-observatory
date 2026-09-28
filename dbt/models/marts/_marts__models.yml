@@ -1,0 +1,107 @@
+version: 2
+
+models:
+  - name: dim_crop
+    description: >
+      Culturas acompanhadas. Arábica e canephora detalham o café total (a partir de 2012):
+      somas entre culturas devem filtrar `is_coffee_breakdown = false` para não contar o café
+      duas vezes.
+    columns:
+      - name: crop
+        data_tests: [unique, not_null]
+      - name: is_coffee_breakdown
+        data_tests: [not_null]
+
+  - name: dim_year
+    description: >
+      Dimensão de ano conformada, compartilhada entre o fato de produção e, na fase 8, o fato
+      de clima.
+    columns:
+      - name: year
+        data_tests: [unique, not_null]
+      - name: decade
+        description: "Primeiro ano da década. Exemplo: 1990."
+      - name: is_real_value_available
+        description: >
+          Verdadeiro quando o valor da produção pode ser deflacionado: ano a partir de
+          `real_value_first_year` (1995) e com os 12 meses de IPCA.
+        data_tests: [not_null]
+
+  - name: dim_municipality
+    description: >
+      Todos os municípios da malha atual (Localidades), inclusive os 7 sem dados na PAM, que
+      não têm linhas no fato.
+    columns:
+      - name: municipality_id
+        data_tests: [unique, not_null]
+      - name: state_abbreviation
+        data_tests: [not_null]
+      - name: first_pam_year
+        description: >
+          Primeiro ano com dado na PAM para as culturas acompanhadas. Aproximação para o ano de
+          criação de municípios desmembrados; nulo quando não há dado.
+
+  - name: fct_crop_production
+    description: >
+      Produção agrícola por município × cultura × ano. Só existem linhas com algum dado na PAM;
+      combinações ausentes significam "sem dado", nunca produção zero.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop, year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            # Production implies harvested area (nulls count as "no production"/"no area").
+            expression: "coalesce(production_t, 0) <= 0 or coalesce(harvested_area_ha, 0) > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            # Recalculated yield agrees with IBGE's within rounding. Warns on known source
+            # errors (28 records in 1998 published as "-").
+            expression: "abs(round(yield_kg_ha) - ibge_yield_kg_ha) <= 1"
+          config:
+            severity: warn
+            where: "harvested_area_ha > 0 and ibge_yield_kg_ha is not null"
+      - dbt_utils.expression_is_true:
+          arguments:
+            # Real value exists exactly from real_value_first_year on, when there is a nominal value.
+            expression: >-
+              (production_value_real_thousand_brl is not null)
+              = (year >= {{ var('real_value_first_year') }}
+                 and production_value_nominal_thousand is not null)
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "production_value_real_thousand_brl is null or production_value_unit = 'Mil Reais'"
+    columns:
+      - name: municipality_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_municipality')
+                field: municipality_id
+      - name: crop
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_crop')
+                field: crop
+      - name: year
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_year')
+                field: year
+      - name: yield_kg_ha
+        description: Rendimento recalculado (produção × 1000 / área colhida); nulo sem área colhida.
+      - name: ibge_yield_kg_ha
+        description: Rendimento publicado pelo IBGE, mantido só para o teste de consistência.
+      - name: production_value_nominal_thousand
+        description: >
+          Valor da produção em milhares da moeda do ano (ver `production_value_unit`). "Mil
+          Cruzeiros" designa duas moedas diferentes: 1974–1985 e 1990–1992.
+      - name: production_value_real_thousand_brl
+        description: >
+          Valor em milhares de reais a preços do ano-base (`deflation_base_year`), deflacionado
+          pela média anual do IPCA. Nulo antes de 1995.
