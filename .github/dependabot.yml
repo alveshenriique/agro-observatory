@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Keeps the SHA-pinned actions in .github/workflows up to date: Dependabot opens a PR that
+  # bumps the SHA and the version comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
