@@ -42,3 +42,34 @@ sources:
             description: Mês de referência no formato dd/mm/aaaa, sempre no dia 01.
           - name: valor
             description: Variação mensal em %, com ponto decimal.
+
+      - name: brdwgd_municipality_cells
+        description: >
+          Como cada município foi associado à grade do BR-DWGD: método (`cells_inside`,
+          `representative_point`, `nearest_valid_cell`, `no_data`), número de células, centroide
+          e ponto representativo do polígono da malha do IBGE.
+        columns:
+          - name: municipality_id
+            description: Código IBGE do município.
+          - name: method
+            description: Método de associação município → células.
+
+      - name: brdwgd_municipality_daily
+        description: >
+          Clima diário por município (BR-DWGD v3.2.4, grade de 0,1° agregada pela ingestão):
+          chuva, ETo, Tmax e Tmin. Exceção à raw em texto: colunas tipadas, por ser um produto
+          derivado. Tabela particionada por ano no Postgres; os metadados de carga ficam em
+          `raw._load_manifest`.
+        columns:
+          - name: municipality_id
+            description: Código IBGE do município.
+          - name: date
+            description: Dia.
+          - name: precipitation_mm
+            description: Chuva em mm.
+          - name: tmax_c
+            description: Temperatura máxima do ar em °C.
+          - name: tmin_c
+            description: Temperatura mínima do ar em °C.
+          - name: eto_mm
+            description: Evapotranspiração de referência em mm.

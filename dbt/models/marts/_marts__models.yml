@@ -105,3 +105,60 @@ models:
         description: >
           Valor em milhares de reais a preços do ano-base (`deflation_base_year`), deflacionado
           pela média anual do IPCA. Nulo antes de 1995.
+
+  - name: fct_crop_climate
+    description: >
+      Clima por município × cultura × ano da colheita, só para município-anos com produção.
+      Colunas prefixadas pela janela: soja tem `critical_*` (plantio da Conab + 2 meses) e
+      `season_*`; café arábica tem `flowering_*`, `filling_*` e `frost_*` (inverno anterior).
+      `*_z` é a anomalia em desvios-padrão contra a normal 1991–2020 do próprio município;
+      `*_has_normal` indica se a normal existe. Em `dim_year`, o ano é o da colheita.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop, harvest_year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            # Soybean has no coffee windows and vice versa.
+            expression: >-
+              (crop = 'soybean' and flowering_days_in_window is null and frost_days_in_window is null)
+              or (crop = 'coffee_arabica' and critical_days_in_window is null and season_days_in_window is null)
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "critical_water_balance_z is null or critical_has_normal"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "frost_days <= frost_days_in_window and critical_hot_days <= critical_days_in_window"
+          config:
+            where: "frost_days is not null or critical_hot_days is not null"
+    columns:
+      - name: municipality_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_municipality')
+                field: municipality_id
+      - name: crop
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_crop')
+                field: crop
+      - name: harvest_year
+        description: Ano da colheita (ano da PAM).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_year')
+                field: year
+      - name: critical_water_balance_mm
+        description: Chuva − ETo (mm) na janela crítica da soja.
+      - name: critical_longest_dry_spell_days
+        description: Maior veranico (dias seguidos com chuva < 1 mm) na janela crítica.
+      - name: frost_tmin_min_c
+        description: Menor Tmin do inverno anterior à colheita (café arábica).
+      - name: frost_days
+        description: Dias do inverno anterior com Tmin ≤ 2 °C (café arábica).

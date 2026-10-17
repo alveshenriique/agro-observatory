@@ -23,3 +23,111 @@ models:
       - name: deflator_to_base_year
         description: Multiplicador que leva um valor do ano para preços do ano-base.
         data_tests: [not_null]
+
+  - name: int_climate__producing_municipalities
+    description: >
+      Pares município × cultura com alguma produção, restritos às culturas e UFs que têm
+      calendário agrícola (soja nas UFs da Conab; café arábica em MG). O clima só é agregado
+      para esses pares.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop]
+    columns:
+      - name: municipality_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_municipality')
+                field: municipality_id
+
+  - name: int_climate__window_indicators
+    description: >
+      Indicadores climáticos por município × cultura × ano da colheita × janela do calendário,
+      calculados dos dados diários (formato longo). `days_in_window` é o número de dias que a
+      janela tem no ano; `coverage` é a fração deles com dado. Indicadores ficam nulos quando a
+      cobertura é menor que `climate_min_window_coverage`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop, window_name, harvest_year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "days_with_data <= days_in_window and coverage between 0 and 1"
+      - dbt_utils.expression_is_true:
+          arguments:
+            # Indicators are null exactly when the window is below the coverage floor.
+            expression: "(precipitation_mm is null) = (coverage < {{ var('climate_min_window_coverage') }})"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "hot_days <= days_in_window and dry_days <= days_in_window and longest_dry_spell_days <= dry_days and frost_days <= days_in_window"
+          config:
+            where: "precipitation_mm is not null"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "precipitation_mm >= 0 and eto_mm >= 0 and tmin_min_c <= tmax_mean_c and severe_hot_days <= hot_days and severe_frost_days <= frost_days"
+          config:
+            where: "precipitation_mm is not null"
+    columns:
+      - name: harvest_year
+        description: Ano da colheita (ano da PAM), ao qual os meses da janela foram atribuídos.
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= {{ var('climate_first_harvest_year') }}"
+      - name: water_balance_mm
+        description: Soma de (chuva − ETo) na janela; balanço hídrico simplificado, sem solo.
+      - name: hot_days
+        description: Dias com Tmax ≥ `heat_tmax_threshold_c` (32 °C).
+      - name: longest_dry_spell_days
+        description: Maior sequência de dias consecutivos com chuva < `dry_day_precipitation_mm` (1 mm).
+      - name: frost_days
+        description: Dias com Tmin ≤ `frost_tmin_threshold_c` (2 °C, temperatura do ar na grade).
+
+  - name: int_climate__window_normals
+    description: >
+      Normal climatológica (média e desvio-padrão) de cada indicador por município × cultura ×
+      janela, sobre os anos de colheita de 1991 a 2020 com janela completa. Disponível com pelo
+      menos `climate_normal_min_years` anos.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, crop, window_name]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "n_years between 1 and ({{ var('climate_normal_end_year') }} - {{ var('climate_normal_start_year') }} + 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_normal_available = (n_years >= {{ var('climate_normal_min_years') }})"
+
+  - name: int_yield__territory_trend
+    description: >
+      Rendimento por território (região imediata e UF) × cultura × ano da colheita, tendência
+      tecnológica e anomalia. Soja: tendência log-linear por mínimos quadrados em 1991–2025
+      (anos com área ≥ 1.000 ha; precisa de ≥ 15). Café arábica: média móvel centrada 2×2.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, crop, harvest_year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(yield_anomaly_pct is null) = (not is_trend_available)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "trend_n_years >= {{ var('yield_trend_min_years') }}"
+          config:
+            where: "is_trend_available and trend_method = 'log_linear_ols'"
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [immediate_region, state]
+      - name: trend_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [log_linear_ols, centered_2x2_moving_average]
+      - name: yield_anomaly_pct
+        description: Rendimento ÷ tendência − 1 (fração; 0,1 = 10% acima da tendência).

@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: stg_brdwgd__municipality_daily
+    description: >
+      Clima diário por município (BR-DWGD v3.2.4 agregado pela ingestão): chuva, ETo, Tmax e
+      Tmin. Já vem tipado da raw. Os testes rodam só sobre o último ano (`where`), porque a
+      tabela tem ~94 milhões de linhas e os invariantes valem igual em qualquer recorte.
+    columns:
+      - name: municipality_id
+        data_tests:
+          - not_null:
+              config:
+                where: "date >= '2025-01-01'"
+      - name: date
+        data_tests:
+          - not_null:
+              config:
+                where: "date >= '2025-01-01'"
+      - name: precipitation_mm
+        description: Chuva diária em mm.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= 0"
+              config:
+                where: "date >= '2025-01-01' and precipitation_mm is not null"
+      - name: eto_mm
+        description: Evapotranspiração de referência diária em mm.
+      - name: tmax_c
+        description: Temperatura máxima diária do ar em °C (média das células do município).
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: ">= tmin_c"
+              config:
+                where: "date >= '2025-01-01' and tmax_c is not null and tmin_c is not null"
+      - name: tmin_c
+        description: Temperatura mínima diária do ar em °C.
+
+  - name: stg_brdwgd__municipality_cells
+    description: >
+      Como cada município foi associado à grade: método, número de células, centroide e ponto
+      representativo do polígono (malha do IBGE).
+    columns:
+      - name: municipality_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_ibge__localities')
+                field: municipality_id
+      - name: cell_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [cells_inside, representative_point, nearest_valid_cell, no_data]
+      - name: centroid_lon
+        description: Longitude do centroide do polígono (pode cair fora dele).
+      - name: representative_lat
+        description: Latitude do ponto representativo (sempre dentro do polígono).

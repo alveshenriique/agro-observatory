@@ -108,3 +108,71 @@ models:
           - accepted_values:
               arguments:
                 values: [on_year, off_year]
+
+  - name: agg_climate_yield_association
+    description: >
+      Anomalias climáticas e anomalia de rendimento por território (região imediata e UF) ×
+      cultura × ano da colheita. Os z-scores municipais são agregados pela média ponderada pela
+      área plantada (área colhida antes de 1988, ver `weight_basis`). Janela principal:
+      `critical` na soja, `filling` no café. Classes de estresse com z = ±1; geada quando ≥ 20%
+      da área está em municípios com algum dia ≤ 2 °C. Associação, não causalidade.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, crop, harvest_year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(is_water_deficit is null) = (not is_normal_available)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "(yield_anomaly_pct is null) = (not is_trend_available)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "weight_basis = case when harvest_year >= {{ var('planted_area_first_year') }} then 'planted_area' else 'harvested_area' end"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_water_deficit = (water_balance_z <= -{{ var('stress_z_threshold') }})"
+          config:
+            where: "is_normal_available and water_balance_z is not null"
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [immediate_region, state]
+      - name: weight_basis
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [planted_area, harvested_area]
+      - name: water_balance_z
+        description: Média ponderada dos z-scores municipais do balanço hídrico na janela principal.
+      - name: season_water_balance_z
+        description: Idem para o ciclo inteiro da soja (plantio ao fim da colheita); nulo no café.
+      - name: is_season_water_deficit
+        description: Déficit hídrico no ciclo inteiro da soja (z ≤ −1); sinal secundário.
+      - name: frost_area_share
+        description: Participação da área em municípios com ≥ 1 dia de geada no inverno anterior (café).
+      - name: yield_anomaly_pct
+        description: Rendimento ÷ tendência − 1 (fração).
+
+  - name: agg_climate_yield_association_summary
+    description: >
+      Resumo da associação por território × cultura, nos anos com normal e tendência:
+      correlações entre as anomalias climáticas e a de rendimento, anomalia média em anos de
+      estresse vs demais e taxa de acerto (anos de estresse com anomalia negativa), comparável
+      com `negative_anomaly_share_all_years`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, crop]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "water_deficit_hit_rate between 0 and 1"
+          config:
+            where: "water_deficit_hit_rate is not null"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "corr_water_balance_yield between -1 and 1"
+          config:
+            where: "corr_water_balance_yield is not null"

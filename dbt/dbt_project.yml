@@ -17,6 +17,26 @@ vars:
   # national production are flagged as low base.
   low_base_share_threshold: 0.01
 
+  # Climate x production (phase 8b). Thresholds are documented in the README.
+  climate_first_harvest_year: 1981  # windows with year_offset -1 need the previous year (1980)
+  climate_min_window_coverage: 0.9  # share of window days with data; below it, indicators are null
+  heat_tmax_threshold_c: 32
+  severe_heat_tmax_threshold_c: 35
+  dry_day_precipitation_mm: 1  # ETCCDI "dry day"
+  frost_tmin_threshold_c: 2  # air temperature in the grid; the leaf is colder
+  severe_frost_tmin_threshold_c: 0
+  climate_normal_start_year: 1991  # WMO standard normal period
+  climate_normal_end_year: 2020
+  climate_normal_min_years: 25
+  yield_trend_start_year: 1991
+  yield_trend_end_year: 2025
+  yield_trend_min_years: 15
+  yield_trend_min_harvested_area_ha: 1000
+  biennial_crops: ["coffee_arabica"]  # detrended with a centered 2x2 moving average
+  planted_area_first_year: 1988  # weights fall back to harvested area before this
+  stress_z_threshold: 1
+  frost_area_share_threshold: 0.2
+
 flags:
   send_anonymous_usage_stats: false
 
@@ -35,3 +55,18 @@ models:
 seeds:
   agro_observatory:
     +schema: seeds
+    conab_soybean_calendar:
+      +column_types:
+        planting_start_month: integer
+        planting_end_month: integer
+        overlap_start_month: integer
+        overlap_end_month: integer
+        harvest_start_month: integer
+        harvest_end_month: integer
+    crop_calendar_windows:
+      +column_types:
+        month: integer
+        year_offset: integer
+    known_climate_events:
+      +column_types:
+        harvest_year: integer
