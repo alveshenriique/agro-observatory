@@ -1,11 +1,11 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
 from agro_observatory import load_raw
-from agro_observatory.load_raw import SOURCES, SchemaMismatchError
+from agro_observatory.load_raw import SOURCES, Kind, SchemaMismatchError
 
 INGESTED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 LOADED_AT = datetime(2026, 2, 1, tzinfo=UTC)
@@ -46,7 +46,7 @@ def test_find_files_fails_when_source_was_not_ingested(tmp_path) -> None:
 
 
 def test_postgres_columns_mirror_parquet_plus_load_metadata() -> None:
-    assert load_raw.postgres_columns(sample_table().schema) == [
+    assert load_raw.postgres_columns(sample_table().schema, SOURCES["pam"]) == [
         ("V", "text"),
         ("D1C", "text"),
         ("_ingested_at", "timestamptz"),
@@ -57,7 +57,7 @@ def test_postgres_columns_mirror_parquet_plus_load_metadata() -> None:
 
 def test_postgres_columns_reject_typed_source_columns() -> None:
     with pytest.raises(SchemaMismatchError, match="unsupported"):
-        load_raw.postgres_columns(pa.schema([("valor", pa.float64())]))
+        load_raw.postgres_columns(pa.schema([("valor", pa.float64())]), SOURCES["ipca"])
 
 
 def test_create_table_sql_quotes_identifiers() -> None:
@@ -163,7 +163,7 @@ class FakeConnection:
 def test_orphans_are_only_reported_without_prune(caplog) -> None:
     conn = FakeConnection()
 
-    load_raw.handle_orphans(conn, "pam", ["pam/old.parquet"], prune=False)
+    load_raw.handle_orphans(conn, SOURCES["pam"], ["pam/old.parquet"], prune=False)
 
     assert conn.executed == []
     assert "use --prune" in caplog.text
@@ -173,7 +173,7 @@ def test_orphans_are_only_reported_without_prune(caplog) -> None:
 def test_orphans_are_deleted_in_a_transaction_with_prune(caplog) -> None:
     conn = FakeConnection()
 
-    load_raw.handle_orphans(conn, "pam", ["pam/old.parquet"], prune=True)
+    load_raw.handle_orphans(conn, SOURCES["pam"], ["pam/old.parquet"], prune=True)
 
     assert conn.transactions == 1
     assert conn.executed == [
@@ -185,6 +185,83 @@ def test_orphans_are_deleted_in_a_transaction_with_prune(caplog) -> None:
 def test_no_orphans_does_nothing() -> None:
     conn = FakeConnection()
 
-    load_raw.handle_orphans(conn, "pam", [], prune=True)
+    load_raw.handle_orphans(conn, SOURCES["pam"], [], prune=True)
 
     assert conn.executed == [] and conn.transactions == 0
+
+
+def climate_table() -> pa.Table:
+    return pa.table(
+        {
+            "municipality_id": pa.array([5107925, 5107925], pa.int32()),
+            "date": pa.array([date(2025, 1, 1), date(2025, 1, 2)], pa.date32()),
+            "precipitation_mm": pa.array([12.5, None], pa.float32()),
+            "_source_version": pa.array(["v_3.2.4"] * 2, pa.string()),
+            "_ingested_at": pa.array([INGESTED_AT] * 2, pa.timestamp("us", tz="UTC")),
+        }
+    )
+
+
+def test_typed_year_partitioned_columns_keep_types_and_drop_metadata() -> None:
+    columns = load_raw.postgres_columns(climate_table().schema, SOURCES["climate_daily"])
+
+    assert columns == [
+        ("municipality_id", "integer"),
+        ("date", "date"),
+        ("precipitation_mm", "real"),
+    ]
+
+
+def test_typed_snapshot_keeps_types_and_adds_load_metadata() -> None:
+    schema = pa.schema([("municipality_id", pa.int32()), ("centroid_lon", pa.float64())])
+
+    assert load_raw.postgres_columns(schema, SOURCES["climate_cells"]) == [
+        ("municipality_id", "integer"),
+        ("centroid_lon", "double precision"),
+        *load_raw.LOAD_COLUMNS,
+    ]
+
+
+def test_partitioned_table_and_year_partition_sql() -> None:
+    columns = [("municipality_id", "integer"), ("date", "date")]
+
+    assert load_raw.create_table_sql("t", columns, "date").as_string(None) == (
+        'CREATE TABLE IF NOT EXISTS "raw"."t" ("municipality_id" integer, "date" date) '
+        'PARTITION BY RANGE ("date")'
+    )
+    assert load_raw.create_year_partition_sql("t", 1980).as_string(None) == (
+        'CREATE TABLE IF NOT EXISTS "raw"."t_1980" PARTITION OF "raw"."t" '
+        "FOR VALUES FROM ('1980-01-01') TO ('1981-01-01')"
+    )
+    assert load_raw.truncate_partition_sql("t", 1980).as_string(None) == 'TRUNCATE "raw"."t_1980"'
+
+
+def test_year_partitioned_source_cannot_use_row_clear() -> None:
+    assert SOURCES["climate_daily"].kind is Kind.YEAR_PARTITIONED
+    with pytest.raises(ValueError):
+        load_raw.clear_sql(SOURCES["climate_daily"])
+
+
+def test_year_from_file() -> None:
+    assert load_raw.year_from_file("climate/brdwgd_daily/year=1998/data.parquet") == 1998
+    with pytest.raises(ValueError):
+        load_raw.year_from_file("climate/brdwgd_municipality_cells.parquet")
+
+
+def test_csv_bytes_writes_nulls_as_empty_fields() -> None:
+    columns = ["municipality_id", "date", "precipitation_mm"]
+
+    assert load_raw.csv_bytes(climate_table().select(columns)).decode().splitlines() == [
+        "5107925,2025-01-01,12.5",
+        "5107925,2025-01-02,",
+    ]
+
+
+def test_year_partitioned_orphans_drop_partitions() -> None:
+    conn = FakeConnection()
+    orphan = "climate/brdwgd_daily/year=1980/data.parquet"
+
+    load_raw.handle_orphans(conn, SOURCES["climate_daily"], [orphan], prune=True)
+
+    assert conn.executed[0] == ('DROP TABLE IF EXISTS "raw"."brdwgd_municipality_daily_1980"', None)
+    assert conn.transactions == 1
