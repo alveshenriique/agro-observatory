@@ -1,0 +1,73 @@
+version: 2
+
+seeds:
+  - name: crops
+    description: Culturas acompanhadas, com o código do produto no SIDRA e a flag de detalhamento do café.
+
+  - name: conab_soybean_calendar
+    description: >
+      Transcrição manual do "Calendário de Plantio e Colheita de Grãos no Brasil 2022" da Conab
+      (páginas 52 a 55, soja), em resolução mensal: um mês entra numa fase quando a barra do
+      calendário cobre pelo menos metade dele. `planting_*` são os meses marcados só como
+      plantio; `overlap_*` os meses marcados como plantio/colheita (plantios tardios já com
+      colheita em curso); `harvest_*` inclui colheita e plantio/colheita. UFs ausentes do
+      calendário (AC, AM, CE, RN, PB, PE, SE, ES, RJ) somam 0,07% da produção de soja.
+    columns:
+      - name: state_abbreviation
+        data_tests: [unique, not_null]
+      - name: planting_start_month
+        data_tests: [not_null]
+      - name: harvest_end_month
+        data_tests: [not_null]
+
+  - name: crop_calendar_windows
+    description: >
+      Janelas fenológicas por cultura e UF, um registro por mês. `year_offset` indica a qual
+      ano a data pertence em relação ao ano da colheita (o ano da PAM): 0 = mesmo ano, -1 = ano
+      anterior. Soja: `critical` (meses de plantio da Conab + 2, floração a enchimento) e
+      `season` (do plantio ao fim da colheita), gerados por scripts/make_calendar_windows.py.
+      Café arábica em MG: `flowering` (set-nov do ano anterior), `filling` (dez do ano anterior
+      a mar) e `frost` (jun-ago do ano anterior), fixos e documentados como aproximação.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [crop, state_abbreviation, window_name, month, year_offset]
+    columns:
+      - name: crop
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('crops')
+                field: crop
+      - name: window_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [critical, season, flowering, filling, frost]
+      - name: month
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "between 1 and 12"
+      - name: year_offset
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, -1]
+                quote: false
+
+  - name: known_climate_events
+    description: >
+      Eventos climáticos conhecidos usados como casos de validação da associação clima ×
+      rendimento (sinal esperado: anomalia de rendimento negativa). O teste
+      assert_known_climate_events_match confere cada um quando há dado disponível.
+    columns:
+      - name: event_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [water_deficit, heat, frost]

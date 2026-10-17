@@ -1,0 +1,11 @@
+crop,territory_level,territory_name,harvest_year,event_type,description
+soybean,state,RS,2005,water_deficit,Seca de 2004/05 no Sul
+soybean,state,RS,2012,water_deficit,Seca de 2011/12 no Sul (La Niña)
+soybean,state,RS,2022,water_deficit,Seca de 2021/22 no Sul (La Niña)
+soybean,state,PR,2022,water_deficit,Seca de 2021/22 no Sul (La Niña)
+soybean,state,MS,2022,water_deficit,Seca de 2021/22 no Centro-Sul (La Niña)
+soybean,state,BA,2016,water_deficit,Seca de 2015/16 no MATOPIBA (El Niño)
+soybean,state,MA,2016,water_deficit,Seca de 2015/16 no MATOPIBA (El Niño)
+soybean,state,MT,2016,water_deficit,Veranico de janeiro de 2016 (El Niño)
+coffee_arabica,state,MG,2014,water_deficit,Seca e calor de janeiro-fevereiro de 2014 no Sudeste
+coffee_arabica,state,MG,2022,frost,Geada de 20 de julho de 2021 (atinge a safra seguinte)
