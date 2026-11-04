@@ -2,16 +2,19 @@
 -- the daily grid for producing municipalities only. Long format: one row per window; the
 -- fact pivots it. Indicators are null when the window has less than
 -- `climate_min_window_coverage` of its days with data (series edges, CI sample).
--- The whole daily series of ~3,600 municipalities is scanned once. The pre-hooks give the
--- sorts of the dry-spell calculation enough memory to avoid spilling to disk and disable
--- nested-loop joins for this statement only: the planner has no statistics for the
+-- The whole daily series of ~3,600 municipalities is scanned once. On Postgres, the pre-hooks
+-- give the sorts of the dry-spell calculation enough memory to avoid spilling to disk and
+-- disable nested-loop joins for this statement only: the planner has no statistics for the
 -- `assigned` CTE and underestimates it by three orders of magnitude (producing × calendar is
 -- estimated at 87 rows against 40,320 real), so it may join the two aggregations of it with a
 -- nested loop over 350,000 × 350,000 rows (over an hour) instead of a hash join (~4 minutes).
 -- This is a workaround for that specific misestimate, not a general practice (see README).
 {{ config(
     materialized='table',
-    pre_hook=["set work_mem = '512MB'", "set enable_nestloop = off"]
+    pre_hook=(
+        ["set work_mem = '512MB'", "set enable_nestloop = off"]
+        if target.type == 'postgres' else []
+    )
 ) }}
 
 {% set first_year = var('climate_first_harvest_year') %}
@@ -37,7 +40,7 @@ daily as (
 ),
 
 bounds as (
-    select max(extract(year from date))::integer as last_harvest_year
+    select cast(max(extract(year from date)) as {{ dbt.type_int() }}) as last_harvest_year
     from daily
 ),
 
@@ -49,7 +52,7 @@ assigned as (
         producing.crop,
         producing.state_abbreviation,
         calendar.window_name,
-        extract(year from daily.date)::integer - calendar.year_offset as harvest_year,
+        cast(extract(year from daily.date) as {{ dbt.type_int() }}) - calendar.year_offset as harvest_year,
         daily.date,
         daily.precipitation_mm,
         daily.eto_mm,
@@ -62,13 +65,13 @@ assigned as (
     inner join calendar
         on calendar.crop = producing.crop
         and calendar.state_abbreviation = producing.state_abbreviation
-        and calendar.month = extract(month from daily.date)::integer
+        and calendar.month = cast(extract(month from daily.date) as {{ dbt.type_int() }})
     cross join bounds
-    where extract(year from daily.date)::integer - calendar.year_offset
+    where cast(extract(year from daily.date) as {{ dbt.type_int() }}) - calendar.year_offset
         between {{ first_year }} and bounds.last_harvest_year
 ),
 
--- Consecutive dry days form islands: the date minus the dry day's sequence number is
+-- Consecutive dry days form islands: the day number minus the dry day's sequence number is
 -- constant within a run (gaps-and-islands).
 dry_runs as (
     select municipality_id, crop, window_name, harvest_year, island, count(*) as run_days
@@ -78,10 +81,10 @@ dry_runs as (
             crop,
             window_name,
             harvest_year,
-            date - (row_number() over (
+            {{ dbt.datediff("cast('1970-01-01' as date)", 'date', 'day') }} - row_number() over (
                 partition by municipality_id, crop, window_name, harvest_year
                 order by date
-            ))::integer as island
+            ) as island
         from assigned
         where is_dry
     ) as dry_day_islands
@@ -101,10 +104,10 @@ aggregated as (
         state_abbreviation,
         window_name,
         harvest_year,
-        count(*) filter (
-            where precipitation_mm is not null and eto_mm is not null
-                and tmax_c is not null and tmin_c is not null
-        ) as days_with_data,
+        count(case
+            when precipitation_mm is not null and eto_mm is not null
+                and tmax_c is not null and tmin_c is not null then 1
+        end) as days_with_data,
         sum(precipitation_mm) as precipitation_mm,
         sum(eto_mm) as eto_mm,
         sum(precipitation_mm - eto_mm) as water_balance_mm,
@@ -112,13 +115,25 @@ aggregated as (
         max(tmax_c) as tmax_max_c,
         avg(tmin_c) as tmin_mean_c,
         min(tmin_c) as tmin_min_c,
-        count(*) filter (where tmax_c >= {{ var('heat_tmax_threshold_c') }}) as hot_days,
-        count(*) filter (where tmax_c >= {{ var('severe_heat_tmax_threshold_c') }}) as severe_hot_days,
-        count(*) filter (where is_dry) as dry_days,
-        count(*) filter (where tmin_c <= {{ var('frost_tmin_threshold_c') }}) as frost_days,
-        count(*) filter (where tmin_c <= {{ var('severe_frost_tmin_threshold_c') }}) as severe_frost_days
+        count(case when tmax_c >= {{ var('heat_tmax_threshold_c') }} then 1 end) as hot_days,
+        count(case when tmax_c >= {{ var('severe_heat_tmax_threshold_c') }} then 1 end) as severe_hot_days,
+        count(case when is_dry then 1 end) as dry_days,
+        count(case when tmin_c <= {{ var('frost_tmin_threshold_c') }} then 1 end) as frost_days,
+        count(case when tmin_c <= {{ var('severe_frost_tmin_threshold_c') }} then 1 end) as severe_frost_days
     from assigned
     group by municipality_id, crop, state_abbreviation, window_name, harvest_year
+),
+
+numbers as (
+    {{ dbt_utils.generate_series(100) }}
+),
+
+-- generate_series yields a float; the years are cast back to integers.
+harvest_years as (
+    select cast({{ first_year }} + numbers.generated_number - 1 as {{ dbt.type_int() }}) as harvest_year
+    from numbers
+    cross join bounds
+    where {{ first_year }} + numbers.generated_number - 1 <= bounds.last_harvest_year
 ),
 
 -- Calendar days each window has in each harvest year (months differ in length, and
@@ -128,15 +143,14 @@ expected_days as (
         calendar.crop,
         calendar.state_abbreviation,
         calendar.window_name,
-        years.harvest_year,
-        sum(extract(day from (
-            make_date(years.harvest_year + calendar.year_offset, calendar.month, 1)
-            + interval '1 month - 1 day'
-        )))::integer as days_in_window
+        harvest_years.harvest_year,
+        cast(sum(extract(day from {{ dbt.last_day(
+            date_from_parts('harvest_years.harvest_year + calendar.year_offset', 'calendar.month', 1),
+            'month'
+        ) }})) as {{ dbt.type_int() }}) as days_in_window
     from calendar
-    cross join bounds
-    cross join generate_series({{ first_year }}, bounds.last_harvest_year) as years (harvest_year)
-    group by calendar.crop, calendar.state_abbreviation, calendar.window_name, years.harvest_year
+    cross join harvest_years
+    group by calendar.crop, calendar.state_abbreviation, calendar.window_name, harvest_years.harvest_year
 )
 
 select
@@ -147,15 +161,15 @@ select
     aggregated.harvest_year,
     expected_days.days_in_window,
     aggregated.days_with_data,
-    round(aggregated.days_with_data::numeric / expected_days.days_in_window, 4) as coverage,
+    round(cast(aggregated.days_with_data as numeric) / expected_days.days_in_window, 4) as coverage,
     {% for indicator in indicators %}
     case
-        when aggregated.days_with_data::numeric / expected_days.days_in_window >= {{ min_coverage }}
+        when cast(aggregated.days_with_data as numeric) / expected_days.days_in_window >= {{ min_coverage }}
             then aggregated.{{ indicator }}
     end as {{ indicator }},
     {% endfor %}
     case
-        when aggregated.days_with_data::numeric / expected_days.days_in_window >= {{ min_coverage }}
+        when cast(aggregated.days_with_data as numeric) / expected_days.days_in_window >= {{ min_coverage }}
             then coalesce(longest_dry_spell.longest_dry_spell_days, 0)
     end as longest_dry_spell_days
 from aggregated

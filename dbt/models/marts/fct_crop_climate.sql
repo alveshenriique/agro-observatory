@@ -70,7 +70,7 @@ select
     max(case when indicators.window_name = '{{ w }}' then indicators.{{ z_names[column] }} end)
         as {{ window.aliases.get(z_names[column], w ~ '_' ~ z_names[column]) }},
     {% endfor %}
-    coalesce(bool_or(case when indicators.window_name = '{{ w }}' then indicators.is_normal_available end), false)
+    coalesce({{ dbt.bool_or("case when indicators.window_name = '" ~ w ~ "' then indicators.is_normal_available end") }}, false)
         as {{ w }}_has_normal{{ "," if not loop.last }}
     {% endfor %}
 from producing_years

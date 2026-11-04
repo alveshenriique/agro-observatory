@@ -16,14 +16,14 @@ ranked as (
         production_t / sum(production_t) over (partition by crop, year) as share,
         row_number() over (
             partition by crop, year order by production_t desc, municipality_id
-        ) as rank
+        ) as production_rank
     from production
 ),
 
 cumulative as (
     select
         *,
-        sum(share) over (partition by crop, year order by rank) as cumulative_share
+        sum(share) over (partition by crop, year order by production_rank) as cumulative_share
     from ranked
 )
 
@@ -32,9 +32,9 @@ select
     year,
     count(*) as producing_municipalities,
     sum(production_t) as national_production_t,
-    min(rank) filter (where cumulative_share >= 0.5) as municipalities_for_50pct,
-    min(rank) filter (where cumulative_share >= 0.8) as municipalities_for_80pct,
-    min(rank) filter (where cumulative_share >= 0.5)::numeric / count(*)
+    min(case when cumulative_share >= 0.5 then production_rank end) as municipalities_for_50pct,
+    min(case when cumulative_share >= 0.8 then production_rank end) as municipalities_for_80pct,
+    cast(min(case when cumulative_share >= 0.5 then production_rank end) as numeric) / count(*)
         as share_of_producers_for_50pct,
     -- HHI on the 0-10,000 scale (sum of squared percentage shares).
     sum(power(share * 100, 2)) as hhi

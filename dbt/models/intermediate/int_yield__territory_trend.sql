@@ -4,7 +4,7 @@
 --
 -- Trend methods:
 -- - log-linear OLS per territory over `yield_trend_start_year`-`yield_trend_end_year`
---   (constant percentage gain per year), fitted on years with at least
+--   (constant percentage gain per year, slope = covar_pop / var_pop), fitted on years with at least
 --   `yield_trend_min_harvested_area_ha` and requiring `yield_trend_min_years` of them.
 --   Drought years pull the line down a little (see README; Theil-Sen is the robust option);
 -- - for biennial crops (`biennial_crops`), the centered 2x2 moving average of yield, which
@@ -42,7 +42,7 @@ territory_years as (
     select
         '{{ level }}' as territory_level,
         {{ id_column }} as territory_id,
-        {{ name_column }}::text as territory_name,
+        cast({{ name_column }} as {{ dbt.type_string() }}) as territory_name,
         crop,
         harvest_year,
         sum(production_t) as production_t,
@@ -63,13 +63,16 @@ eligible as (
     from territory_years
 ),
 
+-- OLS slope as covar_pop / var_pop (regr_slope is not available in every dialect); the line
+-- is then evaluated in centered form: mean(ln y) + slope * (year - mean(year)).
 log_linear_fit as (
     select
         territory_level,
         territory_id,
         crop,
-        regr_slope(ln(yield_kg_ha), harvest_year) as slope,
-        regr_intercept(ln(yield_kg_ha), harvest_year) as intercept,
+        covar_pop(ln(yield_kg_ha), harvest_year) / nullif(var_pop(harvest_year), 0) as slope,
+        avg(ln(yield_kg_ha)) as mean_log_yield,
+        avg(harvest_year) as mean_year,
         count(*) as n_years
     from eligible
     where crop not in ({{ "'" ~ biennial | join("', '") ~ "'" }})
@@ -114,7 +117,7 @@ with_trend as (
                 and eligible.is_eligible
                 and eligible.harvest_year
                     between {{ var('yield_trend_start_year') }} and {{ var('yield_trend_end_year') }}
-                then exp(fit.intercept + fit.slope * eligible.harvest_year)
+                then exp(fit.mean_log_yield + fit.slope * (eligible.harvest_year - fit.mean_year))
         end as trend_yield_kg_ha
     from eligible
     left join log_linear_fit as fit

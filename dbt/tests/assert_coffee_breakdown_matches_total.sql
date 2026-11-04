@@ -3,8 +3,8 @@ with coffee as (
     select
         municipality_id,
         year,
-        sum(production_t) filter (where crop = 'coffee_total') as total_t,
-        sum(production_t) filter (where crop in ('coffee_arabica', 'coffee_canephora')) as breakdown_t
+        sum(case when crop = 'coffee_total' then production_t end) as total_t,
+        sum(case when crop in ('coffee_arabica', 'coffee_canephora') then production_t end) as breakdown_t
     from {{ ref('fct_crop_production') }}
     where crop like 'coffee%' and year >= 2012
     group by municipality_id, year
