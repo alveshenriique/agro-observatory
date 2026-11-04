@@ -8,8 +8,9 @@
 {% set anchors = [1975, 1985, 1995, 2005, 2015, 2024] %}
 
 with anchors as (
-    select anchor_year
-    from unnest(array{{ anchors }}) as anchor_year
+    {% for anchor in anchors %}
+    select {{ anchor }} as anchor_year{% if not loop.last %} union all{% endif %}
+    {% endfor %}
 ),
 
 production as (
@@ -119,8 +120,8 @@ select
     region_name as territory_name,
     start_anchor,
     end_anchor,
-    (start_anchor - 1)::text || '-' || (start_anchor + 1)::text as start_period,
-    (end_anchor - 1)::text || '-' || (end_anchor + 1)::text as end_period,
+    cast(start_anchor - 1 as {{ dbt.type_string() }}) || '-' || cast(start_anchor + 1 as {{ dbt.type_string() }}) as start_period,
+    cast(end_anchor - 1 as {{ dbt.type_string() }}) || '-' || cast(end_anchor + 1 as {{ dbt.type_string() }}) as end_period,
     start_production_t,
     end_production_t,
     start_harvested_area_ha,

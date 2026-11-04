@@ -61,19 +61,19 @@ by_territory as (
     select
         '{{ level }}' as territory_level,
         {{ id_column }} as territory_id,
-        {{ name_column }}::text as territory_name,
+        cast({{ name_column }} as {{ dbt.type_string() }}) as territory_name,
         crop,
         harvest_year,
         max(primary_window) as primary_window,
         count(*) as municipalities,
         sum(weight) as total_weight,
-        sum(weight) filter (where water_balance_z is not null) as weight_with_normal,
+        sum(case when water_balance_z is not null then weight end) as weight_with_normal,
         {% for column in weighted_means %}
-        sum(weight * {{ column }}) filter (where {{ column }} is not null)
-            / nullif(sum(weight) filter (where {{ column }} is not null), 0) as {{ column }},
+        sum(case when {{ column }} is not null then weight * {{ column }} end)
+            / nullif(sum(case when {{ column }} is not null then weight end), 0) as {{ column }},
         {% endfor %}
-        sum(weight) filter (where frost_days >= 1)
-            / nullif(sum(weight) filter (where frost_days is not null), 0) as frost_area_share
+        sum(case when frost_days >= 1 then weight end)
+            / nullif(sum(case when frost_days is not null then weight end), 0) as frost_area_share
     from municipal
     where weight is not null
     group by 1, 2, 3, 4, 5

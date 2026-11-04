@@ -6,11 +6,11 @@
 with harvest_2022 as (
     select
         count(*) as municipalities,
-        count(*) filter (where frost_days >= 1) as with_frost
+        count(case when frost_days >= 1 then 1 end) as with_frost
     from {{ ref('fct_crop_climate') }}
     where crop = 'coffee_arabica' and harvest_year = 2022 and frost_coverage >= 0.9
 )
 
 select *
 from harvest_2022
-where municipalities >= 100 and with_frost::numeric / municipalities < 0.15
+where municipalities >= 100 and cast(with_frost as numeric) / municipalities < 0.15

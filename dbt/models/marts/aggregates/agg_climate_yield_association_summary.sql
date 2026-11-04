@@ -20,24 +20,24 @@ select
     corr(water_balance_z, yield_anomaly_pct) as corr_water_balance_yield,
     corr(hot_days_z, yield_anomaly_pct) as corr_hot_days_yield,
     corr(longest_dry_spell_z, yield_anomaly_pct) as corr_dry_spell_yield,
-    count(*) filter (where yield_anomaly_pct < 0)::numeric / count(*) as negative_anomaly_share_all_years,
+    cast(count(case when yield_anomaly_pct < 0 then 1 end) as numeric) / count(*) as negative_anomaly_share_all_years,
 
-    count(*) filter (where is_water_deficit) as water_deficit_years,
-    avg(yield_anomaly_pct) filter (where is_water_deficit) as mean_anomaly_water_deficit_years,
-    avg(yield_anomaly_pct) filter (where not is_water_deficit) as mean_anomaly_no_water_deficit_years,
-    count(*) filter (where is_water_deficit and yield_anomaly_pct < 0)::numeric
-        / nullif(count(*) filter (where is_water_deficit), 0) as water_deficit_hit_rate,
+    count(case when is_water_deficit then 1 end) as water_deficit_years,
+    avg(case when is_water_deficit then yield_anomaly_pct end) as mean_anomaly_water_deficit_years,
+    avg(case when not is_water_deficit then yield_anomaly_pct end) as mean_anomaly_no_water_deficit_years,
+    cast(count(case when is_water_deficit and yield_anomaly_pct < 0 then 1 end) as numeric)
+        / nullif(count(case when is_water_deficit then 1 end), 0) as water_deficit_hit_rate,
 
-    count(*) filter (where is_heat_stress) as heat_stress_years,
-    avg(yield_anomaly_pct) filter (where is_heat_stress) as mean_anomaly_heat_stress_years,
-    avg(yield_anomaly_pct) filter (where not is_heat_stress) as mean_anomaly_no_heat_stress_years,
-    count(*) filter (where is_heat_stress and yield_anomaly_pct < 0)::numeric
-        / nullif(count(*) filter (where is_heat_stress), 0) as heat_stress_hit_rate,
+    count(case when is_heat_stress then 1 end) as heat_stress_years,
+    avg(case when is_heat_stress then yield_anomaly_pct end) as mean_anomaly_heat_stress_years,
+    avg(case when not is_heat_stress then yield_anomaly_pct end) as mean_anomaly_no_heat_stress_years,
+    cast(count(case when is_heat_stress and yield_anomaly_pct < 0 then 1 end) as numeric)
+        / nullif(count(case when is_heat_stress then 1 end), 0) as heat_stress_hit_rate,
 
-    count(*) filter (where is_frost) as frost_years,
-    avg(yield_anomaly_pct) filter (where is_frost) as mean_anomaly_frost_years,
-    avg(yield_anomaly_pct) filter (where not is_frost) as mean_anomaly_no_frost_years,
-    count(*) filter (where is_frost and yield_anomaly_pct < 0)::numeric
-        / nullif(count(*) filter (where is_frost), 0) as frost_hit_rate
+    count(case when is_frost then 1 end) as frost_years,
+    avg(case when is_frost then yield_anomaly_pct end) as mean_anomaly_frost_years,
+    avg(case when not is_frost then yield_anomaly_pct end) as mean_anomaly_no_frost_years,
+    cast(count(case when is_frost and yield_anomaly_pct < 0 then 1 end) as numeric)
+        / nullif(count(case when is_frost then 1 end), 0) as frost_hit_rate
 from years
 group by territory_level, territory_id, territory_name, crop

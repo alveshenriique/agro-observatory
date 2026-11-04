@@ -11,8 +11,9 @@ with shares as (
 ),
 
 thresholds as (
-    select threshold
-    from unnest(array{{ thresholds }}::numeric[]) as threshold
+    {% for threshold in thresholds %}
+    select cast({{ threshold }} as numeric) as threshold{% if not loop.last %} union all{% endif %}
+    {% endfor %}
 ),
 
 flagged as (
@@ -31,8 +32,8 @@ summary as (
         territory_id,
         territory_name,
         threshold,
-        min(year) filter (where is_above) as first_year_reached,
-        max(year) filter (where not is_above) as last_year_below,
+        min(case when is_above then year end) as first_year_reached,
+        max(case when not is_above then year end) as last_year_below,
         min(year) as first_series_year,
         max(year) as last_series_year,
         max(share_of_national_production) as max_share

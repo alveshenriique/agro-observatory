@@ -12,7 +12,7 @@ with monthly as (
 
 annual as (
     select
-        extract(year from reference_month)::integer as year,
+        cast(extract(year from reference_month) as {{ dbt.type_int() }}) as year,
         avg(price_index) as avg_price_index,
         count(*) as months
     from monthly

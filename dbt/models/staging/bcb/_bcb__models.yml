@@ -11,7 +11,7 @@ models:
           - not_null
           - dbt_utils.expression_is_true:
               arguments:
-                expression: "= date_trunc('month', reference_month)::date"
+                expression: "= cast({{ dbt.date_trunc('month', 'reference_month') }} as date)"
       - name: monthly_change_pct
         description: "Variação mensal do IPCA em %. Exemplo: 0.16 significa 0,16% no mês."
         data_tests: [not_null]
