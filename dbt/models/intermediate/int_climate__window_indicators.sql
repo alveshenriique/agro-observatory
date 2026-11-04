@@ -2,9 +2,17 @@
 -- the daily grid for producing municipalities only. Long format: one row per window; the
 -- fact pivots it. Indicators are null when the window has less than
 -- `climate_min_window_coverage` of its days with data (series edges, CI sample).
--- The whole daily series of ~3,600 municipalities is scanned once; the pre-hook gives the
--- sorts of the dry-spell calculation enough memory to avoid spilling to disk.
-{{ config(materialized='table', pre_hook="set work_mem = '512MB'") }}
+-- The whole daily series of ~3,600 municipalities is scanned once. The pre-hooks give the
+-- sorts of the dry-spell calculation enough memory to avoid spilling to disk and disable
+-- nested-loop joins for this statement only: the planner has no statistics for the
+-- `assigned` CTE and underestimates it by three orders of magnitude (producing × calendar is
+-- estimated at 87 rows against 40,320 real), so it may join the two aggregations of it with a
+-- nested loop over 350,000 × 350,000 rows (over an hour) instead of a hash join (~4 minutes).
+-- This is a workaround for that specific misestimate, not a general practice (see README).
+{{ config(
+    materialized='table',
+    pre_hook=["set work_mem = '512MB'", "set enable_nestloop = off"]
+) }}
 
 {% set first_year = var('climate_first_harvest_year') %}
 {% set min_coverage = var('climate_min_window_coverage') %}
