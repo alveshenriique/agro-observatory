@@ -18,13 +18,14 @@ select count(*) as regions,
        round(percentile_cont(0.5) within group (order by corr_water_balance_yield)::numeric, 3) as median_corr_wb,
        count(*) filter (where corr_water_balance_yield > 0) as positive_corr,
        round(percentile_cont(0.5) within group (order by corr_hot_days_yield)::numeric, 3) as median_corr_heat,
+       round(percentile_cont(0.5) within group (order by corr_heat_degree_days_yield)::numeric, 3) as median_corr_degree_days,
        round(avg(water_deficit_hit_rate)::numeric, 3) as avg_deficit_hit_rate,
        round(avg(negative_anomaly_share_all_years)::numeric, 3) as avg_negative_share
 from marts.agg_climate_yield_association_summary
 where crop = 'soybean' and territory_level = 'immediate_region' and n_years >= 15;
 \echo '== known events: anomaly sign and expected stress flag'
 select e.crop, e.territory_name as uf, e.harvest_year as year, e.event_type,
-       round(100 * a.yield_anomaly_pct) as anomaly_pct,
+       round(100 * a.yield_anomaly_pct) as anomaly_pct, round(100 * a.biennial_ols_yield_anomaly_pct) as ols_parity_pct,
        round(a.water_balance_z::numeric, 2) as wb_z, round(a.hot_days_z::numeric, 2) as heat_z,
        round(a.frost_area_share::numeric, 2) as frost_share,
        case e.event_type when 'water_deficit' then a.is_water_deficit when 'frost' then a.is_frost else a.is_heat_stress end as flag
