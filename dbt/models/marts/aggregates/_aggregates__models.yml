@@ -42,6 +42,18 @@ models:
         description: >
           Fração do crescimento explicada pela área. Pode sair de [0, 1] quando um dos efeitos é
           negativo (ex.: área cai e rendimento sobe).
+      - name: territory_id
+        description: "Código do território: 0 para o Brasil, código da macrorregião (1 a 5) para as regiões."
+      - name: start_anchor
+        description: Ano-âncora do período inicial; o período é a média de 3 anos em torno dele.
+      - name: end_anchor
+        description: Ano-âncora do período final.
+      - name: start_period
+        description: "Rótulo do período inicial. Exemplo: \"1974–1976\"."
+      - name: ln_production_growth
+        description: ln(produção final ÷ produção inicial); exp() dá o fator de crescimento.
+      - name: yield_share_of_growth
+        description: Fração do crescimento explicada pelo rendimento (1 − `area_share_of_growth`).
 
   - name: agg_production_share_by_territory
     description: >
@@ -59,6 +71,12 @@ models:
                 values: [state, intermediate_region]
       - name: share_of_national_production
         description: Participação na produção nacional (0 a 1).
+      - name: territory_id
+        description: Código IBGE da UF ou da região intermediária.
+      - name: production_t
+        description: Produção do território no ano (0 quando não produziu ou não há dado).
+      - name: national_production_t
+        description: Produção nacional da cultura no ano, denominador da participação.
 
   - name: agg_territory_share_thresholds
     description: >
@@ -72,6 +90,15 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "first_year_sustained is null or first_year_sustained >= first_year_reached"
+    columns:
+      - name: threshold
+        description: Limiar de participação na produção nacional (0,01 ou 0,05).
+      - name: first_year_reached
+        description: Primeiro ano em que a participação ficou acima do limiar; pode ser um pico isolado.
+      - name: first_year_sustained
+        description: Ano a partir do qual a participação nunca mais caiu abaixo do limiar; nulo se ainda não aconteceu.
+      - name: max_share
+        description: Maior participação do território na série.
 
   - name: agg_production_concentration
     description: >
@@ -93,6 +120,14 @@ models:
         description: >
           Soma dos quadrados das participações em %. 10.000 = um só município produz tudo;
           valores baixos = produção espalhada.
+      - name: producing_municipalities
+        description: Municípios com produção positiva no ano.
+      - name: municipalities_for_50pct
+        description: Quantos municípios, do maior para o menor, somam 50% da produção nacional.
+      - name: municipalities_for_80pct
+        description: Quantos municípios somam 80% da produção nacional.
+      - name: share_of_producers_for_50pct
+        description: "`municipalities_for_50pct` ÷ `producing_municipalities`."
 
   - name: agg_coffee_mg_biennial
     description: >
@@ -137,6 +172,18 @@ models:
           - accepted_values:
               arguments:
                 values: [on_year, off_year]
+      - name: production_unit
+        description: "Unidade da produção no ano: `coffee_in_husk` (em coco) até 2001, `coffee_processed` (beneficiado) a partir de 2002."
+      - name: production_t
+        description: Produção de café em MG na série (toneladas, na unidade de `production_unit`).
+      - name: yield_kg_ha
+        description: Produção ÷ área colhida (kg/ha).
+      - name: production_change_vs_previous_year
+        description: Variação da produção contra o ano anterior (fração); nula no primeiro ano de cada série.
+      - name: production_centered_trend_t
+        description: Média móvel centrada 2×2 da produção (pesos 1/4, 1/2, 1/4), que elimina o ciclo de 2 anos.
+      - name: yield_centered_trend_kg_ha
+        description: Média móvel centrada 2×2 do rendimento.
 
   - name: agg_climate_yield_association
     description: >
@@ -185,6 +232,7 @@ models:
               arguments:
                 values: [immediate_region, state]
       - name: weight_basis
+        description: "Peso usado na agregação: área plantada (café: área em produção) ou, antes de 1988, área colhida."
         data_tests:
           - accepted_values:
               arguments:
@@ -222,6 +270,42 @@ models:
         description: Participação da área em municípios com ≥ 1 dia de geada no inverno anterior (café).
       - name: yield_anomaly_pct
         description: Rendimento ÷ tendência − 1 (fração).
+      - name: territory_id
+        description: Código IBGE da região imediata ou da UF.
+      - name: harvest_year
+        description: Ano da colheita (ano da PAM).
+      - name: primary_window
+        description: "Janela usada nos `*_z` sem prefixo: `critical` na soja, `filling` no café arábica."
+      - name: municipalities
+        description: Municípios produtores do território com clima no ano.
+      - name: total_weight
+        description: Soma dos pesos (área, em hectares) dos municípios agregados.
+      - name: is_normal_available
+        description: Verdadeiro quando pelo menos metade da área está em municípios com normal 1991–2020; só então há classes de estresse.
+      - name: hot_days_z
+        description: Anomalia dos dias com Tmax ≥ 32 °C na janela principal, padronizada como `water_balance_z`.
+      - name: longest_dry_spell_z
+        description: Anomalia do maior veranico na janela principal.
+      - name: flowering_water_balance_z
+        description: "Café: anomalia do balanço hídrico na florada."
+      - name: frost_tmin_min_z
+        description: "Café: anomalia da menor Tmin do inverno anterior."
+      - name: frost_tmin_min_c
+        description: "Café: menor Tmin do inverno anterior, média ponderada pela área (°C)."
+      - name: is_water_deficit
+        description: "Déficit hídrico na janela principal: `water_balance_z` ≤ −1."
+      - name: is_frost
+        description: "Café: geada quando ≥ 20% da área está em municípios com algum dia de Tmin ≤ 2 °C no inverno anterior."
+      - name: yield_kg_ha
+        description: Rendimento do território no ano (soma da produção ÷ soma da área colhida).
+      - name: trend_yield_kg_ha
+        description: Rendimento previsto pela tendência tecnológica do território.
+      - name: trend_method
+        description: "Método da tendência: `log_linear_ols` (soja) ou `centered_2x2_moving_average` (café)."
+      - name: is_trend_available
+        description: "Verdadeiro quando o território tem tendência (soja: ≥ 15 anos com área ≥ 1.000 ha em 1991–2025)."
+      - name: is_biennial_ols_available
+        description: "Café: verdadeiro quando a reta com termo de bienalidade pôde ser ajustada (≥ 10 anos)."
 
   - name: agg_climate_yield_association_summary
     description: >
@@ -243,3 +327,34 @@ models:
             expression: "corr_water_balance_yield between -1 and 1"
           config:
             where: "corr_water_balance_yield is not null"
+    columns:
+      - name: n_years
+        description: Anos do território com normal e tendência, base de todas as métricas.
+      - name: corr_water_balance_yield
+        description: Correlação de Pearson entre `water_balance_z` e `yield_anomaly_pct` (−1 a 1).
+      - name: corr_hot_days_yield
+        description: Correlação entre a anomalia de dias quentes e a de rendimento.
+      - name: corr_dry_spell_yield
+        description: Correlação entre a anomalia do maior veranico e a de rendimento.
+      - name: corr_heat_degree_days_yield
+        description: Correlação entre a anomalia dos graus-dia acima de 30 °C e a de rendimento.
+      - name: corr_water_balance_biennial_ols_yield
+        description: "Café: correlação entre o balanço hídrico e a anomalia pela reta com termo de bienalidade."
+      - name: negative_anomaly_share_all_years
+        description: Fração de anos com anomalia de rendimento negativa; base de comparação das taxas de acerto.
+      - name: water_deficit_years
+        description: Anos classificados como déficit hídrico.
+      - name: mean_anomaly_water_deficit_years
+        description: Anomalia média de rendimento nos anos de déficit (fração).
+      - name: mean_anomaly_no_water_deficit_years
+        description: Anomalia média de rendimento nos demais anos.
+      - name: water_deficit_hit_rate
+        description: Fração dos anos de déficit com anomalia negativa; comparar com `negative_anomaly_share_all_years`.
+      - name: heat_stress_years
+        description: Anos classificados como calor.
+      - name: heat_stress_hit_rate
+        description: Fração dos anos de calor com anomalia negativa.
+      - name: frost_years
+        description: "Café: anos classificados como geada."
+      - name: frost_hit_rate
+        description: "Café: fração dos anos de geada com anomalia negativa."

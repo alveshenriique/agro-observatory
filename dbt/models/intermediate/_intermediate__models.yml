@@ -12,6 +12,16 @@ models:
     columns:
       - name: has_data
         data_tests: [not_null]
+      - name: planted_or_bearing_area_ha
+        description: "Variável 8331 (\"área plantada ou destinada à colheita\"): área plantada na soja e no milho, área em produção no café."
+      - name: harvested_area_ha
+        description: Área colhida (variável 216), em hectares.
+      - name: production_t
+        description: Quantidade produzida (variável 214), em toneladas.
+      - name: ibge_yield_kg_ha
+        description: Rendimento médio publicado pelo IBGE (variável 112), em kg/ha.
+      - name: production_value_nominal_thousand
+        description: Valor da produção (variável 215), em milhares da moeda do ano.
 
   - name: int_bcb__ipca_annual
     description: >
@@ -86,6 +96,26 @@ models:
         description: Maior sequência de dias consecutivos com chuva < `dry_day_precipitation_mm` (1 mm).
       - name: frost_days
         description: Dias com Tmin ≤ `frost_tmin_threshold_c` (2 °C, temperatura do ar na grade).
+      - name: window_name
+        description: "Janela do calendário: `critical` e `season` (soja), `flowering`, `filling` e `frost` (café arábica)."
+      - name: days_in_window
+        description: Dias que a janela tem no ano da colheita.
+      - name: coverage
+        description: Fração dos dias da janela com dado climático.
+      - name: precipitation_mm
+        description: Chuva acumulada na janela (mm).
+      - name: eto_mm
+        description: Evapotranspiração de referência acumulada na janela (mm).
+      - name: tmax_mean_c
+        description: Média da Tmax diária na janela (°C).
+      - name: severe_hot_days
+        description: Dias com Tmax ≥ `severe_heat_tmax_threshold_c` (35 °C).
+      - name: dry_days
+        description: Dias com chuva < 1 mm na janela.
+      - name: tmin_min_c
+        description: Menor Tmin diária da janela (°C).
+      - name: severe_frost_days
+        description: Dias com Tmin ≤ `severe_frost_tmin_threshold_c` (0 °C).
 
   - name: int_climate__window_normals
     description: >
@@ -102,6 +132,11 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: "is_normal_available = (n_years >= {{ var('climate_normal_min_years') }})"
+    columns:
+      - name: n_years
+        description: Anos de colheita de 1991 a 2020 com janela completa que entraram na normal.
+      - name: is_normal_available
+        description: Verdadeiro com pelo menos `climate_normal_min_years` (25) anos.
 
   - name: int_yield__territory_trend
     description: >
@@ -139,3 +174,11 @@ models:
           com pelo menos `biennial_ols_min_years` anos. Alternativa à média 2×2, lado a lado.
       - name: biennial_ols_parity_effect_pct
         description: Rendimento dos anos ímpares em relação aos pares (fração), pelo mesmo ajuste.
+      - name: yield_kg_ha
+        description: "Rendimento do território no ano: soma da produção ÷ soma da área colhida."
+      - name: trend_yield_kg_ha
+        description: Rendimento previsto pela tendência no ano.
+      - name: is_trend_available
+        description: Verdadeiro quando a tendência pôde ser calculada para o território e o ano.
+      - name: trend_n_years
+        description: Anos usados no ajuste da tendência.

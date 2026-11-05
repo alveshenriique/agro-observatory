@@ -1,6 +1,6 @@
 """Aggregate BR-DWGD gridded daily climate to municipality × day and save it as Parquet.
 
-Steps (see README, "Clima: BR-DWGD agregado por município"):
+Steps (see docs/DECISOES.md, "Clima: BR-DWGD agregado por município"):
 1. download the IBGE municipal mesh and the needed BR-DWGD NetCDF files;
 2. map each municipality to grid cells: the 0.1° cells whose center falls inside the polygon,
    or, when none does (small municipalities), the cell containing the polygon's

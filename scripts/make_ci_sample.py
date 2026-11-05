@@ -26,7 +26,7 @@ from agro_observatory.ingestion.common import write_parquet_atomic
 SOURCE_DIR = Path("data/raw")
 OUTPUT_DIR = Path("tests/fixtures/raw")
 
-# Chosen to cover the cases the models must handle (see README, "CI com amostra dos dados").
+# Chosen to cover the cases the models must handle (docs/DECISOES.md, "CI com amostra dos dados").
 SAMPLE_MUNICIPALITIES = {
     "5107925": "Sorriso-MT: large soybean/corn producer, created in 1986",
     "3148103": "Patrocínio-MG: largest arabica producer in MG (biennial cycle)",

@@ -7,7 +7,7 @@ Each file is loaded in its own transaction with COPY, according to the source ki
 - snapshot (localities, IPCA, climate cell mapping): truncate the table, then copy the file;
 - year_partitioned (daily climate, ~94M rows): a natively partitioned table by year; each
   file is one year and replaces its partition with TRUNCATE. Its columns are typed (derived
-  data, see README), its metadata columns are kept once per file in `raw._load_manifest`
+  data, see docs/DECISOES.md), its metadata columns are kept once per file in `raw._load_manifest`
   instead of on every row, and it is copied as CSV for speed.
 Files whose `_ingested_at` already matches what is loaded are skipped (unless --force),
 so a rerun only reloads what the ingestion actually changed. Data from files no longer on

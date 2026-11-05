@@ -8,7 +8,7 @@
 -- `assigned` CTE and underestimates it by three orders of magnitude (producing × calendar is
 -- estimated at 87 rows against 40,320 real), so it may join the two aggregations of it with a
 -- nested loop over 350,000 × 350,000 rows (over an hour) instead of a hash join (~4 minutes).
--- This is a workaround for that specific misestimate, not a general practice (see README).
+-- This is a workaround for that specific misestimate, not a general practice (see docs/DECISOES.md).
 {{ config(
     materialized='table',
     pre_hook=(

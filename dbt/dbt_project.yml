@@ -17,7 +17,7 @@ vars:
   # national production are flagged as low base.
   low_base_share_threshold: 0.01
 
-  # Climate x production (phase 8b). Thresholds are documented in the README.
+  # Climate x production (phase 8b). Thresholds are documented in docs/METODOLOGIA.md.
   climate_first_harvest_year: 1981  # windows with year_offset -1 need the previous year (1980)
   climate_min_window_coverage: 0.9  # share of window days with data; below it, indicators are null
   heat_tmax_threshold_c: 32

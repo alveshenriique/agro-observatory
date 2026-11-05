@@ -6,7 +6,7 @@
 -- - log-linear OLS per territory over `yield_trend_start_year`-`yield_trend_end_year`
 --   (constant percentage gain per year, slope = covar_pop / var_pop), fitted on years with at least
 --   `yield_trend_min_harvested_area_ha` and requiring `yield_trend_min_years` of them.
---   Drought years pull the line down a little (see README; Theil-Sen is the robust option);
+--   Drought years pull the line down a little (see docs/VALIDACAO.md; Theil-Sen is the robust option);
 -- - for biennial crops (`biennial_crops`), the centered 2x2 moving average of yield, which
 --   removes the two-year cycle and the slow trend together; null at the series edges. It
 --   absorbs shocks that last two years (2014-2015, 2021-2022 in MG), so a second estimate is

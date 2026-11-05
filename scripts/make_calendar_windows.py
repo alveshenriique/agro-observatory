@@ -8,7 +8,7 @@ dbt/seeds/conab_soybean_calendar.csv:
 `year_offset` says which calendar year a month belongs to relative to the harvest year
 (the PAM year): -1 for months before the turn of the year when the cycle crosses it.
 
-Arabica coffee in Minas Gerais uses fixed windows (see README, "Clima x produção").
+Arabica coffee in Minas Gerais uses fixed windows (see docs/METODOLOGIA.md, "Clima e produção").
 
 Usage: uv run python scripts/make_calendar_windows.py
 The dbt test assert_calendar_windows_match_conab_rule re-derives the soybean windows in SQL,
