@@ -1,7 +1,7 @@
 [project]
 name = "agro-observatory"
 version = "0.1.0"
-description = "Data pipeline on Brazilian agricultural production (IBGE PAM, BCB IPCA, INMET)."
+description = "Data pipeline on Brazilian agricultural production (IBGE PAM, BCB IPCA, BR-DWGD climate)."
 authors = [
     { name = "Henrique Alves", email = "henrique.a.campos@ufv.br" }
 ]
@@ -30,8 +30,11 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "colorspacious>=1.1.2",
+    "daltonlens>=0.1.5",
     "dbt-core>=1.12.5",
     "dbt-postgres>=1.11.0",
+    "matplotlib>=3.11.2",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
     "ruff>=0.16.8",
