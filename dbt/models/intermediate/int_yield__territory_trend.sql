@@ -8,7 +8,11 @@
 --   `yield_trend_min_harvested_area_ha` and requiring `yield_trend_min_years` of them.
 --   Drought years pull the line down a little (see README; Theil-Sen is the robust option);
 -- - for biennial crops (`biennial_crops`), the centered 2x2 moving average of yield, which
---   removes the two-year cycle and the slow trend together; null at the series edges.
+--   removes the two-year cycle and the slow trend together; null at the series edges. It
+--   absorbs shocks that last two years (2014-2015, 2021-2022 in MG), so a second estimate is
+--   given alongside (`biennial_ols_*`): a log-linear OLS fit with a parity term (odd/even
+--   year), which keeps those shocks visible but assumes the on/off alternation never flips.
+--   Neither is adequate alone; the marts carry both.
 {{ config(materialized='table') }}
 
 {% set levels = [
@@ -22,7 +26,7 @@ with base as (
         fct.crop,
         fct.year as harvest_year,
         fct.production_t,
-        fct.planted_area_ha,
+        fct.planted_or_bearing_area_ha,
         fct.harvested_area_ha,
         dim.immediate_region_id,
         dim.immediate_region_name,
@@ -46,7 +50,7 @@ territory_years as (
         crop,
         harvest_year,
         sum(production_t) as production_t,
-        sum(planted_area_ha) as planted_area_ha,
+        sum(planted_or_bearing_area_ha) as planted_or_bearing_area_ha,
         sum(harvested_area_ha) as harvested_area_ha,
         sum(production_t) / nullif(sum(harvested_area_ha), 0) * 1000 as yield_kg_ha
     from base
@@ -96,9 +100,51 @@ moving_average as (
     window w as (partition by territory_level, territory_id, crop order by harvest_year)
 ),
 
+-- Two-regressor OLS ln(y) = a + b * year + c * parity, solved from the population
+-- covariances (the row count cancels), so it is one aggregation pass and portable.
+biennial_fit as (
+    select
+        territory_level,
+        territory_id,
+        crop,
+        count(*) as n_years,
+        avg(ln(yield_kg_ha)) as mean_log_yield,
+        avg(harvest_year) as mean_year,
+        avg(mod(harvest_year, 2)) as mean_parity,
+        covar_pop(harvest_year, ln(yield_kg_ha)) as cov_year_log_yield,
+        covar_pop(mod(harvest_year, 2), ln(yield_kg_ha)) as cov_parity_log_yield,
+        covar_pop(harvest_year, mod(harvest_year, 2)) as cov_year_parity,
+        var_pop(harvest_year) as var_year,
+        var_pop(mod(harvest_year, 2)) as var_parity
+    from eligible
+    where crop in ({{ "'" ~ biennial | join("', '") ~ "'" }}) and is_eligible
+    group by territory_level, territory_id, crop
+),
+
+biennial_coefficients as (
+    select
+        *,
+        (cov_year_log_yield * var_parity - cov_parity_log_yield * cov_year_parity)
+            / nullif(var_year * var_parity - cov_year_parity * cov_year_parity, 0) as slope,
+        (cov_parity_log_yield * var_year - cov_year_log_yield * cov_year_parity)
+            / nullif(var_year * var_parity - cov_year_parity * cov_year_parity, 0) as parity_effect
+    from biennial_fit
+),
+
 with_trend as (
     select
         eligible.*,
+        case
+            when ols.n_years >= {{ var('biennial_ols_min_years') }} and eligible.is_eligible
+                then exp(
+                    ols.mean_log_yield
+                    + ols.slope * (eligible.harvest_year - ols.mean_year)
+                    + ols.parity_effect * (mod(eligible.harvest_year, 2) - ols.mean_parity)
+                )
+        end as biennial_ols_trend_yield_kg_ha,
+        ols.n_years as biennial_ols_n_years,
+        exp(ols.slope) - 1 as biennial_ols_annual_growth_pct,
+        exp(ols.parity_effect) - 1 as biennial_ols_parity_effect_pct,
         case
             when eligible.crop in ({{ "'" ~ biennial | join("', '") ~ "'" }})
                 then 'centered_2x2_moving_average'
@@ -129,6 +175,10 @@ with_trend as (
         and ma.territory_id = eligible.territory_id
         and ma.crop = eligible.crop
         and ma.harvest_year = eligible.harvest_year
+    left join biennial_coefficients as ols
+        on ols.territory_level = eligible.territory_level
+        and ols.territory_id = eligible.territory_id
+        and ols.crop = eligible.crop
 )
 
 select
@@ -138,7 +188,7 @@ select
     crop,
     harvest_year,
     production_t,
-    planted_area_ha,
+    planted_or_bearing_area_ha,
     harvested_area_ha,
     yield_kg_ha,
     trend_method,
@@ -146,5 +196,13 @@ select
     annual_trend_growth_pct,
     trend_yield_kg_ha,
     trend_yield_kg_ha is not null as is_trend_available,
-    yield_kg_ha / nullif(trend_yield_kg_ha, 0) - 1 as yield_anomaly_pct
+    yield_kg_ha / nullif(trend_yield_kg_ha, 0) - 1 as yield_anomaly_pct,
+    -- Biennial crops only: the alternative detrending (OLS with parity term).
+    biennial_ols_trend_yield_kg_ha,
+    biennial_ols_trend_yield_kg_ha is not null as is_biennial_ols_available,
+    yield_kg_ha / nullif(biennial_ols_trend_yield_kg_ha, 0) - 1 as biennial_ols_yield_anomaly_pct,
+    biennial_ols_n_years,
+    biennial_ols_annual_growth_pct,
+    -- Yield in odd years relative to even years, as a fraction (e.g. -0.08 = 8% lower).
+    biennial_ols_parity_effect_pct
 from with_trend

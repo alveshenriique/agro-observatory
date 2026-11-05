@@ -1,0 +1,54 @@
+territory_level,territory_id,territory_name,crop,year,variable,official_value,our_value,reason
+country,1,Brasil,corn,1998,production_t,29601753,29605323,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,corn,1998,harvested_area_ha,10585498,10588256,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,corn,1998,planted_area_ha,11234423,11245838,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,1998,production_t,3378731,3378952,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,1998,harvested_area_ha,2070409,2070569,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,1998,planted_area_ha,2077433,2077593,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,2002,harvested_area_ha,2370891,2367471,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,2002,planted_area_ha,2429189,2425769,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,2002,yield_kg_ha,1101,1102.66,Follows the 2002 harvested-area discrepancy
+country,1,Brasil,coffee_total,2010,planted_area_ha,2161826,2161824,IBGE total differs from the sum of its own municipal rows
+country,1,Brasil,coffee_total,2011,planted_area_ha,2149006,2148999,IBGE total differs from the sum of its own municipal rows
+state,52,Goiás,coffee_total,1998,harvested_area_ha,3957,3977,IBGE state total differs from the sum of its own municipal rows
+state,52,Goiás,coffee_total,1998,planted_area_ha,4205,4225,IBGE state total differs from the sum of its own municipal rows
+state,52,Goiás,coffee_total,1998,production_t,4948,4972,IBGE state total differs from the sum of its own municipal rows
+state,50,Mato Grosso do Sul,coffee_total,1998,harvested_area_ha,1321,1358,IBGE state total differs from the sum of its own municipal rows
+state,50,Mato Grosso do Sul,coffee_total,1998,planted_area_ha,1321,1358,IBGE state total differs from the sum of its own municipal rows
+state,50,Mato Grosso do Sul,coffee_total,1998,production_t,2166,2216,IBGE state total differs from the sum of its own municipal rows
+state,50,Mato Grosso do Sul,coffee_total,1998,yield_kg_ha,1639,1631.81,Follows the area discrepancy of the same year
+state,31,Minas Gerais,coffee_total,1998,harvested_area_ha,920829,920846,IBGE state total differs from the sum of its own municipal rows
+state,31,Minas Gerais,coffee_total,1998,planted_area_ha,920867,920884,IBGE state total differs from the sum of its own municipal rows
+state,31,Minas Gerais,coffee_total,1998,production_t,1713330,1713367,IBGE state total differs from the sum of its own municipal rows
+state,25,Paraíba,corn,1998,harvested_area_ha,11981,12181,IBGE state total differs from the sum of its own municipal rows
+state,25,Paraíba,corn,1998,planted_area_ha,103696,110796,IBGE state total differs from the sum of its own municipal rows
+state,25,Paraíba,corn,1998,production_t,3114,3125,IBGE state total differs from the sum of its own municipal rows
+state,25,Paraíba,corn,1998,yield_kg_ha,259,256.55,Follows the area discrepancy of the same year
+state,41,Paraná,coffee_total,1998,harvested_area_ha,128127,128130,IBGE state total differs from the sum of its own municipal rows
+state,41,Paraná,coffee_total,1998,planted_area_ha,128127,128130,IBGE state total differs from the sum of its own municipal rows
+state,41,Paraná,coffee_total,1998,production_t,271284,271286,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,coffee_total,1998,harvested_area_ha,5721,5726,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,coffee_total,1998,planted_area_ha,7021,7026,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,coffee_total,1998,production_t,2158,2160,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,corn,1998,harvested_area_ha,36337,36357,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,corn,1998,planted_area_ha,126827,126847,IBGE state total differs from the sum of its own municipal rows
+state,26,Pernambuco,corn,1998,production_t,15166,15176,IBGE state total differs from the sum of its own municipal rows
+state,24,Rio Grande do Norte,corn,1998,harvested_area_ha,13691,14604,IBGE state total differs from the sum of its own municipal rows
+state,24,Rio Grande do Norte,corn,1998,planted_area_ha,67527,70197,IBGE state total differs from the sum of its own municipal rows
+state,24,Rio Grande do Norte,corn,1998,production_t,6866,6992,IBGE state total differs from the sum of its own municipal rows
+state,24,Rio Grande do Norte,corn,1998,yield_kg_ha,501,478.77,Follows the area discrepancy of the same year
+state,35,São Paulo,coffee_total,1998,harvested_area_ha,249220,249298,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,1998,planted_area_ha,249220,249298,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,1998,production_t,492680,492786,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,2002,harvested_area_ha,224800,221380,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,2002,planted_area_ha,224876,221456,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,2002,yield_kg_ha,1246,1266.21,Follows the area discrepancy of the same year
+state,35,São Paulo,coffee_total,2010,planted_area_ha,204076,204074,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,coffee_total,2011,planted_area_ha,204390,204383,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,corn,1998,harvested_area_ha,1100130,1101755,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,corn,1998,planted_area_ha,1100130,1101755,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,corn,1998,production_t,3656300,3659723,IBGE state total differs from the sum of its own municipal rows
+state,35,São Paulo,corn,1998,yield_kg_ha,3323,3321.72,Follows the area discrepancy of the same year
+state,33,Rio de Janeiro,corn,1974,harvested_area_ha,61109,63463,IBGE state total differs from the sum of its own municipal rows
+state,33,Rio de Janeiro,corn,1974,production_t,66216,69589,IBGE state total differs from the sum of its own municipal rows
+state,33,Rio de Janeiro,corn,1974,yield_kg_ha,1084,1096.53,Follows the area discrepancy of the same year

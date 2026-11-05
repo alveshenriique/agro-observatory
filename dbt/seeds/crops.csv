@@ -1,6 +1,6 @@
-crop,product_id,crop_name_pt,is_coffee_breakdown
-soybean,40124,Soja (em grão),false
-corn,40122,Milho (em grão),false
-coffee_total,40139,Café (em grão) Total,false
-coffee_arabica,40140,Café (em grão) Arábica,true
-coffee_canephora,40141,Café (em grão) Canephora,true
+crop,product_id,crop_name_pt,is_coffee_breakdown,series_break_year,series_break_note
+soybean,40124,Soja (em grão),false,,
+corn,40122,Milho (em grão),false,,
+coffee_total,40139,Café (em grão) Total,false,2002,"Até 2001 a PAM mede o café em coco; a partir de 2002, beneficiado (nota 4 da tabela 5457). O beneficiado pesa cerca de metade do coco e a PAM não publica coeficiente de conversão: não comparar produção nem rendimento através de 2002."
+coffee_arabica,40140,Café (em grão) Arábica,true,,"Série desde 2012, já beneficiado."
+coffee_canephora,40141,Café (em grão) Canephora,true,,"Série desde 2012, já beneficiado."

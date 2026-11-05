@@ -2,7 +2,9 @@ version: 2
 
 seeds:
   - name: crops
-    description: Culturas acompanhadas, com o código do produto no SIDRA e a flag de detalhamento do café.
+    description: >
+      Culturas acompanhadas, com o código do produto no SIDRA, a flag de detalhamento do café e
+      o ano da quebra de unidade na fonte (café: em coco até 2001, beneficiado a partir de 2002).
 
   - name: conab_soybean_calendar
     description: >
@@ -71,3 +73,47 @@ seeds:
           - accepted_values:
               arguments:
                 values: [water_deficit, heat, frost]
+
+  - name: sidra_official_aggregates
+    description: >
+      Agregados que o próprio IBGE publica para a tabela 5457 (PAM) nos níveis Brasil (`country`)
+      e UF (`state`), por cultura × ano × variável, baixados por
+      scripts/fetch_sidra_official_aggregates.py. Servem de referência externa: os testes
+      assert_production_matches_sidra_* comparam as somas municipais do projeto com eles.
+      `official_value` é nulo quando o IBGE publica "...", ".." ou "X"; `raw_value` guarda o
+      símbolo original.
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [country, state]
+      - name: crop
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('crops')
+                field: crop
+
+  - name: sidra_known_discrepancies
+    description: >
+      Células em que o total que o IBGE publica (N1 ou N3) não é igual à soma das linhas
+      municipais que o mesmo IBGE publica (N6), encontradas pela validação externa. Todas em
+      1998, 2002, 2010 e 2011, com diferença máxima de 0,15% nos grandes estados e de até 7% em
+      estados pequenos (PB, RN) em 1998. Os testes assert_production_matches_sidra_* ignoram
+      exatamente essas células; qualquer outra diferença falha o build. Os valores guardam a
+      magnitude para auditoria.
+    columns:
+      - name: reason
+        data_tests: [not_null]
+
+  - name: conab_soybean_series
+    description: >
+      Série histórica de grãos da Conab (Portal de Informações, arquivo SerieHistoricaGraos.txt),
+      só soja, por UF e ano-safra, baixada por scripts/fetch_conab_soybean_series.py. O
+      ano-safra "2023/24" vira `harvest_year` 2024 (o ano da PAM). Fonte de metodologia diferente
+      (levantamento de safra, não censo municipal): o teste assert_soybean_matches_conab só avisa.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [state_abbreviation, harvest_year]

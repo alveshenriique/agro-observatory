@@ -4,13 +4,26 @@
 -- Grain: crop × territory (Brazil and the 5 macro regions) × period pair.
 -- `is_low_base` flags pairs whose start period had less than 1% of the crop's national
 -- production: their log growth is correct but huge (the crop practically started from zero).
+-- Crops with a unit break in the source (coffee: in husk until 2001, processed from 2002,
+-- `dim_crop.series_break_year`) only use anchors whose 3-year window lies after the break,
+-- so coffee starts at 2005 and no pair compares the two units.
 
 {% set anchors = [1975, 1985, 1995, 2005, 2015, 2024] %}
 
-with anchors as (
+with all_anchors as (
     {% for anchor in anchors %}
     select {{ anchor }} as anchor_year{% if not loop.last %} union all{% endif %}
     {% endfor %}
+),
+
+-- Anchors usable by each crop: the whole window (anchor - 1 .. anchor + 1) must be on one
+-- side of the crop's series break, and the series before the break is not used.
+anchors as (
+    select crop.crop, all_anchors.anchor_year
+    from {{ ref('dim_crop') }} as crop
+    cross join all_anchors
+    where not crop.is_coffee_breakdown
+        and (crop.series_break_year is null or all_anchors.anchor_year - 1 >= crop.series_break_year)
 ),
 
 production as (
@@ -52,7 +65,9 @@ periods as (
         avg(annual.harvested_area_ha) as harvested_area_ha,
         count(*) as years_in_window
     from annual
-    inner join anchors on annual.year between anchors.anchor_year - 1 and anchors.anchor_year + 1
+    inner join anchors
+        on anchors.crop = annual.crop
+        and annual.year between anchors.anchor_year - 1 and anchors.anchor_year + 1
     group by 1, 2, 3, 4
 ),
 
@@ -68,13 +83,14 @@ periods_with_share as (
 ),
 
 pairs as (
-    -- Consecutive periods plus the full span.
-    select a0.anchor_year as start_anchor, a1.anchor_year as end_anchor
+    -- Consecutive periods plus the full span, per crop.
+    select a0.crop, a0.anchor_year as start_anchor, min(a1.anchor_year) as end_anchor
     from anchors as a0
     inner join anchors as a1
-        on a1.anchor_year = (select min(anchor_year) from anchors where anchor_year > a0.anchor_year)
+        on a1.crop = a0.crop and a1.anchor_year > a0.anchor_year
+    group by a0.crop, a0.anchor_year
     union all
-    select min(anchor_year), max(anchor_year) from anchors
+    select crop, min(anchor_year), max(anchor_year) from anchors group by crop
 ),
 
 compared as (
@@ -92,7 +108,8 @@ compared as (
         p0.production_t / nullif(p0.harvested_area_ha, 0) as start_yield_t_ha,
         p1.production_t / nullif(p1.harvested_area_ha, 0) as end_yield_t_ha
     from pairs
-    inner join periods_with_share as p0 on p0.anchor_year = pairs.start_anchor
+    inner join periods_with_share as p0
+        on p0.crop = pairs.crop and p0.anchor_year = pairs.start_anchor
     inner join periods_with_share as p1
         on p1.anchor_year = pairs.end_anchor
         and p1.crop = p0.crop

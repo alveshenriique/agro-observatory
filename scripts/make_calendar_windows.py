@@ -15,6 +15,7 @@ The dbt test assert_calendar_windows_match_conab_rule re-derives the soybean win
 so hand edits to the output that break the rule fail the build.
 """
 
+import argparse
 import csv
 from pathlib import Path
 
@@ -42,13 +43,15 @@ def year_offset(month: int, planting_start: int, harvest_end: int) -> int:
     return -1 if crosses_year and month >= planting_start else 0
 
 
-def soybean_windows(row: dict[str, str]) -> dict[str, list[tuple[int, int]]]:
+def soybean_windows(
+    row: dict[str, str], critical_shift: int = CRITICAL_SHIFT_MONTHS
+) -> dict[str, list[tuple[int, int]]]:
     planting_start = int(row["planting_start_month"])
     planting_end = int(row["planting_end_month"])
     harvest_end = int(row["harvest_end_month"])
 
     critical = [
-        ((month - 1 + CRITICAL_SHIFT_MONTHS) % 12) + 1
+        ((month - 1 + critical_shift) % 12) + 1
         for month in cyclic_months(planting_start, planting_end)
     ]
     season = cyclic_months(planting_start, harvest_end)
@@ -59,10 +62,19 @@ def soybean_windows(row: dict[str, str]) -> dict[str, list[tuple[int, int]]]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument(
+        "--critical-shift",
+        type=int,
+        default=CRITICAL_SHIFT_MONTHS,
+        help="months added to the planting months (default 2; other values only for audits)",
+    )
+    args = parser.parse_args()
+
     rows = []
     with CONAB_PATH.open(newline="", encoding="utf-8") as file:
         for row in csv.DictReader(file):
-            for window, months in soybean_windows(row).items():
+            for window, months in soybean_windows(row, args.critical_shift).items():
                 for month, offset in months:
                     rows.append(("soybean", row["state_abbreviation"], window, month, offset))
     for (crop, state), windows in COFFEE_WINDOWS.items():

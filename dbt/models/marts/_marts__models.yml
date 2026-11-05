@@ -11,6 +11,18 @@ models:
         data_tests: [unique, not_null]
       - name: is_coffee_breakdown
         data_tests: [not_null]
+      - name: series_break_year
+        description: >
+          Primeiro ano de uma nova unidade de medida na fonte. Café: "em coco" até 2001 e
+          "beneficiado" a partir de 2002 (nota 4 da tabela 5457), sem coeficiente oficial de
+          conversão na PAM. Produção e rendimento não devem ser somados nem comparados através
+          desse ano (teste assert_coffee_series_do_not_cross_unit_break).
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "= {{ var('coffee_unit_break_year') }}"
+              config:
+                where: "series_break_year is not null"
 
   - name: dim_year
     description: >
@@ -25,6 +37,18 @@ models:
         description: >
           Verdadeiro quando o valor da produção pode ser deflacionado: ano a partir de
           `real_value_first_year` (1995) e com os 12 meses de IPCA.
+        data_tests: [not_null]
+      - name: coffee_production_unit
+        description: >
+          Unidade em que a PAM mede a produção de café no ano: `coffee_in_husk` (em coco) até
+          2001 e `coffee_processed` (beneficiado) a partir de 2002 (var `coffee_unit_break_year`).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [coffee_in_husk, coffee_processed]
+      - name: is_coffee_processed_unit
+        description: Verdadeiro a partir de 2002; filtrar por ele em qualquer série longa de café.
         data_tests: [not_null]
 
   - name: dim_municipality
@@ -93,6 +117,11 @@ models:
               arguments:
                 to: ref('dim_year')
                 field: year
+      - name: planted_or_bearing_area_ha
+        description: >
+          Variável 8331 do IBGE, "área plantada ou destinada à colheita": área plantada nas
+          culturas temporárias (soja, milho) e área em produção (destinada à colheita) nas
+          permanentes (café), que não é plantada a cada ano.
       - name: yield_kg_ha
         description: Rendimento recalculado (produção × 1000 / área colhida); nulo sem área colhida.
       - name: ibge_yield_kg_ha
@@ -158,6 +187,14 @@ models:
         description: Chuva − ETo (mm) na janela crítica da soja.
       - name: critical_longest_dry_spell_days
         description: Maior veranico (dias seguidos com chuva < 1 mm) na janela crítica.
+      - name: critical_hot_days_anomaly_days
+        description: >
+          Dias com Tmax ≥ 32 °C acima da normal do município (dias, não desvios-padrão): a
+          anomalia absoluta, que o z-score infla onde a normal quase não varia.
+      - name: critical_heat_degree_days
+        description: Graus-dia acima de 30 °C na janela crítica (soma de max(Tmax − 30, 0)).
+      - name: critical_precipitation_normal_mm
+        description: Chuva média da normal 1991–2020 na janela crítica, para razões de somas.
       - name: frost_tmin_min_c
         description: Menor Tmin do inverno anterior à colheita (café arábica).
       - name: frost_days

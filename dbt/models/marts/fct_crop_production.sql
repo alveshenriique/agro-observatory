@@ -16,8 +16,10 @@ select
     pam.crop,
     pam.year,
 
-    pam.planted_area_ha,
-    pam.planted_area_status,
+    -- "Área plantada ou destinada à colheita": planted area for soybean and corn, area in
+    -- production (bearing) for coffee, which is not planted every year.
+    pam.planted_or_bearing_area_ha,
+    pam.planted_or_bearing_area_status,
     pam.harvested_area_ha,
     pam.harvested_area_status,
     pam.production_t,

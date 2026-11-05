@@ -6,8 +6,10 @@ models:
       Decomposição logarítmica do crescimento da produção em efeito área e efeito rendimento:
       ln(P1/P0) = ln(A1/A0) + ln(Y1/Y0), com Y = P / A (área colhida). Cada período é a média de
       3 anos em torno de um ano-âncora (1975, 1985, 1995, 2005, 2015 e 2024). Compara períodos
-      consecutivos e o intervalo completo (1975 → 2024), para Brasil e macrorregiões. Café pelo
-      total (o detalhamento só existe a partir de 2012).
+      consecutivos e o intervalo completo, para Brasil e macrorregiões. Café pelo total (o
+      detalhamento só existe a partir de 2012) e só com âncoras de 2005 em diante, porque a PAM
+      mudou a unidade do café em 2002 (`dim_crop.series_break_year`): o intervalo completo do
+      café é 2005 → 2024, o da soja e do milho é 1975 → 2024.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -94,16 +96,43 @@ models:
 
   - name: agg_coffee_mg_biennial
     description: >
-      Produção de café em Minas Gerais, para identificar a bienalidade do arábica. Séries:
-      coffee_arabica (desde 2012) e coffee_total (série longa, como aproximação). A tendência é
-      uma média móvel centrada 2x2 (pesos 1/4, 1/2, 1/4), que elimina exatamente um ciclo de 2
-      anos; `ratio_to_trend` > 1 indica ano de alta e < 1 ano de baixa.
+      Café em Minas Gerais, para identificar a bienalidade do arábica, em produção e em
+      rendimento (produção ÷ área colhida). Três séries, nunca misturadas: `coffee_total_in_husk`
+      (1974–2001, café em coco), `coffee_total_processed` (2002 em diante, beneficiado) e
+      `coffee_arabica` (2012 em diante). A PAM mudou a unidade em 2002 sem coeficiente de
+      conversão, então nenhuma razão nem variação atravessa esse ano: as médias móveis são
+      calculadas dentro de cada série e ficam nulas nas pontas. A tendência é a média móvel
+      centrada 2x2 (pesos 1/4, 1/2, 1/4), que elimina exatamente um ciclo de 2 anos;
+      `production_ratio_to_trend` e `yield_ratio_to_trend` > 1 indicam ano de alta, < 1 ano de
+      baixa. Limitação: a média 2×2 absorve choques de dois anos seguidos (2014–2015, 2021–2022);
+      a alternativa com reta e termo de bienalidade está em `agg_climate_yield_association`.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [crop, year]
+            combination_of_columns: [series, year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            # The unit label of the year must match the series.
+            expression: "(series = 'coffee_total_in_husk') = (production_unit = 'coffee_in_husk')"
     columns:
+      - name: series
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [coffee_total_in_husk, coffee_total_processed, coffee_arabica]
+      - name: production_ratio_to_trend
+        description: Produção ÷ média móvel 2×2 da produção; nula nas pontas de cada série.
+      - name: yield_ratio_to_trend
+        description: Rendimento ÷ média móvel 2×2 do rendimento; nula nas pontas de cada série.
       - name: cycle_phase
+        description: Fase do ciclo pela produção (`on_year` acima da tendência, `off_year` abaixo).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [on_year, off_year]
+      - name: yield_cycle_phase
+        description: Fase do ciclo pelo rendimento.
         data_tests:
           - accepted_values:
               arguments:
@@ -113,9 +142,16 @@ models:
     description: >
       Anomalias climáticas e anomalia de rendimento por território (região imediata e UF) ×
       cultura × ano da colheita. Os z-scores municipais são agregados pela média ponderada pela
-      área plantada (área colhida antes de 1988, ver `weight_basis`). Janela principal:
-      `critical` na soja, `filling` no café. Classes de estresse com z = ±1; geada quando ≥ 20%
-      da área está em municípios com algum dia ≤ 2 °C. Associação, não causalidade.
+      área plantada (no café, a área em produção; área colhida antes de 1988, ver `weight_basis`)
+      e a série de cada território é padronizada de novo pela sua própria normal 1991–2020
+      (`*_z`; a média simples dos z municipais fica em `*_z_municipal_mean`), porque a média de
+      z-scores encolhe a dispersão; sem 15 anos no período (café arábica, desde 2012), `*_z`
+      fica na média simples e `is_territory_standardized` é falso. Chuva relativa à normal é razão de somas ponderadas. Janela
+      principal: `critical` na soja, `filling` no café. Classes de estresse com z = ±1; calor
+      exige também ≥ 5 dias quentes acima da normal; geada quando ≥ 20% da área está em
+      municípios com algum dia ≤ 2 °C. No café, as duas anomalias de rendimento (média 2×2 em
+      `yield_anomaly_pct`, reta com termo de bienalidade em `biennial_ols_yield_anomaly_pct`)
+      ficam lado a lado. Associação, não causalidade.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -128,7 +164,15 @@ models:
             expression: "(yield_anomaly_pct is null) = (not is_trend_available)"
       - dbt_utils.expression_is_true:
           arguments:
-            expression: "weight_basis = case when harvest_year >= {{ var('planted_area_first_year') }} then 'planted_area' else 'harvested_area' end"
+            expression: "weight_basis = case when harvest_year >= {{ var('planted_area_first_year') }} then 'planted_or_bearing_area' else 'harvested_area' end"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_heat_stress = (hot_days_z >= {{ var('stress_z_threshold') }} and hot_days_anomaly_days >= {{ var('heat_min_extra_hot_days') }})"
+          config:
+            where: "is_normal_available and hot_days_z is not null and hot_days_anomaly_days is not null"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "is_territory_standardized = (territory_normal_years >= {{ var('territory_normal_min_years') }})"
       - dbt_utils.expression_is_true:
           arguments:
             expression: "is_water_deficit = (water_balance_z <= -{{ var('stress_z_threshold') }})"
@@ -144,9 +188,32 @@ models:
         data_tests:
           - accepted_values:
               arguments:
-                values: [planted_area, harvested_area]
+                values: [planted_or_bearing_area, harvested_area]
       - name: water_balance_z
-        description: Média ponderada dos z-scores municipais do balanço hídrico na janela principal.
+        description: >
+          Balanço hídrico da janela principal: média ponderada dos z municipais, padronizada de
+          novo pela normal 1991–2020 do próprio território (média e desvio-padrão da série).
+      - name: water_balance_z_municipal_mean
+        description: A média ponderada dos z municipais antes da nova padronização.
+      - name: is_territory_standardized
+        description: >
+          Verdadeiro quando o território tem pelo menos `territory_normal_min_years` (15) anos
+          em 1991–2020 e os `*_z` foram padronizados de novo; falso (café arábica, que só existe
+          desde 2012, e regiões recentes) quando `*_z` é a média simples dos z municipais.
+        data_tests: [not_null]
+      - name: precipitation_pct_of_normal
+        description: Chuva ÷ chuva normal, em %, como razão de somas ponderadas pela área.
+      - name: hot_days_anomaly_days
+        description: Dias quentes acima da normal, média ponderada (dias).
+      - name: heat_degree_days_z
+        description: Graus-dia acima de 30 °C na janela principal, padronizados como `water_balance_z`.
+      - name: is_heat_stress
+        description: z dos dias quentes ≥ 1 e pelo menos `heat_min_extra_hot_days` (5) dias acima da normal.
+      - name: biennial_ols_yield_anomaly_pct
+        description: >
+          Café: anomalia de rendimento pela reta log-linear com termo de bienalidade (paridade
+          do ano). Mantém choques de dois anos seguidos que a média 2×2 absorve, mas erra quando
+          a alternância vira; nula na soja.
       - name: season_water_balance_z
         description: Idem para o ciclo inteiro da soja (plantio ao fim da colheita); nulo no café.
       - name: is_season_water_deficit

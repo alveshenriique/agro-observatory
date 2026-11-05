@@ -36,6 +36,12 @@ vars:
   planted_area_first_year: 1988  # weights fall back to harvested area before this
   stress_z_threshold: 1
   frost_area_share_threshold: 0.2
+  # Audit (phase 9) corrections.
+  coffee_unit_break_year: 2002  # PAM: coffee "em coco" until 2001, "beneficiado" from 2002 (table 5457, note 4)
+  biennial_ols_min_years: 10  # log-linear fit with a parity term for biennial crops (arabica has 14 years)
+  territory_normal_min_years: 15  # years in the normal period needed to re-standardize a territory's series
+  heat_degree_day_base_c: 30  # degree-days above this Tmax, a continuous heat measure
+  heat_min_extra_hot_days: 5  # heat stress needs z >= stress_z_threshold AND this many hot days above normal
 
 flags:
   send_anonymous_usage_stats: false
@@ -55,6 +61,9 @@ models:
 seeds:
   agro_observatory:
     +schema: seeds
+    crops:
+      +column_types:
+        series_break_year: integer
     conab_soybean_calendar:
       +column_types:
         planting_start_month: integer
@@ -70,3 +79,20 @@ seeds:
     known_climate_events:
       +column_types:
         harvest_year: integer
+    sidra_official_aggregates:
+      +column_types:
+        territory_id: integer
+        year: integer
+        official_value: numeric
+    sidra_known_discrepancies:
+      +column_types:
+        territory_id: integer
+        year: integer
+        official_value: numeric
+        our_value: numeric
+    conab_soybean_series:
+      +column_types:
+        harvest_year: integer
+        planted_area_ha: numeric
+        production_t: numeric
+        yield_kg_ha: numeric
