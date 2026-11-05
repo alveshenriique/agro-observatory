@@ -70,3 +70,20 @@ seeds:
     known_climate_events:
       +column_types:
         harvest_year: integer
+    sidra_official_aggregates:
+      +column_types:
+        territory_id: integer
+        year: integer
+        official_value: numeric
+    sidra_known_discrepancies:
+      +column_types:
+        territory_id: integer
+        year: integer
+        official_value: numeric
+        our_value: numeric
+    conab_soybean_series:
+      +column_types:
+        harvest_year: integer
+        planted_area_ha: numeric
+        production_t: numeric
+        yield_kg_ha: numeric
