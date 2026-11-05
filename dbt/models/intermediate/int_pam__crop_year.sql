@@ -1,9 +1,11 @@
 -- Pivot PAM from one row per variable to one row per municipality × crop × year.
+-- IBGE's variable 8331 is "área plantada ou destinada à colheita": planted area for annual
+-- crops, bearing area (area destined for harvest) for permanent crops such as coffee.
 -- Materialized as a table: both marts read it, and the pivot scans ~5M staging rows.
 {{ config(materialized='table') }}
 
 {% set measures = [
-    ('planted_area', 'planted_area_ha', 'planted_area_status'),
+    ('planted_area', 'planted_or_bearing_area_ha', 'planted_or_bearing_area_status'),
     ('harvested_area', 'harvested_area_ha', 'harvested_area_status'),
     ('production_quantity', 'production_t', 'production_status'),
     ('average_yield', 'ibge_yield_kg_ha', 'ibge_yield_status'),

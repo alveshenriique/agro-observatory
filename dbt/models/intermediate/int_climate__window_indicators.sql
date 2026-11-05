@@ -21,7 +21,7 @@
 {% set min_coverage = var('climate_min_window_coverage') %}
 {% set indicators = [
     'precipitation_mm', 'eto_mm', 'water_balance_mm', 'tmax_mean_c', 'tmax_max_c',
-    'tmin_mean_c', 'tmin_min_c', 'hot_days', 'severe_hot_days', 'dry_days',
+    'tmin_mean_c', 'tmin_min_c', 'hot_days', 'severe_hot_days', 'heat_degree_days', 'dry_days',
     'frost_days', 'severe_frost_days',
 ] %}
 
@@ -117,6 +117,8 @@ aggregated as (
         min(tmin_c) as tmin_min_c,
         count(case when tmax_c >= {{ var('heat_tmax_threshold_c') }} then 1 end) as hot_days,
         count(case when tmax_c >= {{ var('severe_heat_tmax_threshold_c') }} then 1 end) as severe_hot_days,
+        -- Degree-days above the base: how much, not only how often, Tmax exceeded it.
+        sum(greatest(tmax_c - {{ var('heat_degree_day_base_c') }}, 0)) as heat_degree_days,
         count(case when is_dry then 1 end) as dry_days,
         count(case when tmin_c <= {{ var('frost_tmin_threshold_c') }} then 1 end) as frost_days,
         count(case when tmin_c <= {{ var('severe_frost_tmin_threshold_c') }} then 1 end) as severe_frost_days

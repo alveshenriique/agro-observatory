@@ -7,8 +7,8 @@
 
 {% set indicators = [
     'precipitation_mm', 'eto_mm', 'water_balance_mm', 'tmax_mean_c', 'tmin_mean_c',
-    'tmin_min_c', 'hot_days', 'severe_hot_days', 'dry_days', 'longest_dry_spell_days',
-    'frost_days', 'severe_frost_days',
+    'tmin_min_c', 'hot_days', 'severe_hot_days', 'heat_degree_days', 'dry_days',
+    'longest_dry_spell_days', 'frost_days', 'severe_frost_days',
 ] %}
 
 select

@@ -8,7 +8,7 @@ with ours as (
     select
         dim.state_abbreviation,
         fct.year as harvest_year,
-        sum(fct.planted_area_ha) as planted_area_ha,
+        sum(fct.planted_or_bearing_area_ha) as planted_area_ha,
         sum(fct.production_t) as production_t
     from {{ ref('fct_crop_production') }} as fct
     inner join {{ ref('dim_municipality') }} as dim on dim.municipality_id = fct.municipality_id

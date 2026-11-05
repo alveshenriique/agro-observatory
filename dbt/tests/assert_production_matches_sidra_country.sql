@@ -10,7 +10,7 @@ with ours as (
         year,
         sum(production_t) as production_t,
         sum(harvested_area_ha) as harvested_area_ha,
-        sum(planted_area_ha) as planted_area_ha,
+        sum(planted_or_bearing_area_ha) as planted_area_ha,
         sum(production_t) / nullif(sum(harvested_area_ha), 0) * 1000 as yield_kg_ha
     from {{ ref('fct_crop_production') }}
     group by crop, year

@@ -19,7 +19,7 @@ with municipal as (
         end as state_id,
         fct.production_t,
         fct.harvested_area_ha,
-        fct.planted_area_ha
+        fct.planted_or_bearing_area_ha as planted_area_ha
     from {{ ref('fct_crop_production') }} as fct
     inner join {{ ref('dim_municipality') }} as dim on dim.municipality_id = fct.municipality_id
 ),

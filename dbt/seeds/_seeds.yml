@@ -2,7 +2,9 @@ version: 2
 
 seeds:
   - name: crops
-    description: Culturas acompanhadas, com o código do produto no SIDRA e a flag de detalhamento do café.
+    description: >
+      Culturas acompanhadas, com o código do produto no SIDRA, a flag de detalhamento do café e
+      o ano da quebra de unidade na fonte (café: em coco até 2001, beneficiado a partir de 2002).
 
   - name: conab_soybean_calendar
     description: >

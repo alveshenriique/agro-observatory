@@ -3,25 +3,30 @@
 -- coffee has `flowering_*`, `filling_*` and `frost_*`; the others are null. `*_z` columns are
 -- anomalies against the municipality's 1991-2020 normal; `*_has_normal` says whether the
 -- normal exists (false in short series, such as the CI sample).
+-- Windows with a heat signal also carry the absolute anomaly of hot days
+-- (`*_hot_days_anomaly_days`, days above the normal) and degree-days above 30 °C, because a
+-- z-score of a count with a tiny normal spread (cool regions) inflates small differences.
+-- `*_precipitation_normal_mm` is the normal mean, so territories can compute rain as a ratio
+-- of sums instead of a mean of ratios.
 {% set full_set = [
     'days_in_window', 'coverage', 'precipitation_mm', 'eto_mm', 'water_balance_mm',
-    'tmax_mean_c', 'hot_days', 'severe_hot_days', 'dry_days', 'longest_dry_spell_days',
+    'tmax_mean_c', 'hot_days', 'severe_hot_days', 'heat_degree_days', 'dry_days', 'longest_dry_spell_days',
 ] %}
-{% set z_columns = ['water_balance_mm', 'hot_days', 'longest_dry_spell_days', 'tmin_min_c', 'frost_days'] %}
+{% set z_columns = ['water_balance_mm', 'hot_days', 'heat_degree_days', 'longest_dry_spell_days', 'tmin_min_c', 'frost_days'] %}
 {# z-scores are dimensionless, so their names drop the unit suffix. #}
 {% set z_names = {
-    'water_balance_mm': 'water_balance_z', 'hot_days': 'hot_days_z',
+    'water_balance_mm': 'water_balance_z', 'hot_days': 'hot_days_z', 'heat_degree_days': 'heat_degree_days_z',
     'longest_dry_spell_days': 'longest_dry_spell_z', 'tmin_min_c': 'tmin_min_z', 'frost_days': 'frost_days_z',
 } %}
-{% set water_z = ['water_balance_mm', 'hot_days', 'longest_dry_spell_days'] %}
+{% set water_z = ['water_balance_mm', 'hot_days', 'heat_degree_days', 'longest_dry_spell_days'] %}
 {% set windows = [
-    {'name': 'critical', 'columns': full_set, 'z': water_z, 'pct': true, 'aliases': {}},
+    {'name': 'critical', 'columns': full_set, 'z': water_z, 'pct': true, 'heat': true, 'aliases': {}},
     {'name': 'season', 'columns': ['days_in_window', 'coverage', 'precipitation_mm', 'eto_mm', 'water_balance_mm'],
-     'z': ['water_balance_mm'], 'pct': true, 'aliases': {}},
-    {'name': 'flowering', 'columns': full_set, 'z': water_z, 'pct': true, 'aliases': {}},
-    {'name': 'filling', 'columns': full_set, 'z': water_z, 'pct': true, 'aliases': {}},
+     'z': ['water_balance_mm'], 'pct': true, 'heat': false, 'aliases': {}},
+    {'name': 'flowering', 'columns': full_set, 'z': water_z, 'pct': true, 'heat': true, 'aliases': {}},
+    {'name': 'filling', 'columns': full_set, 'z': water_z, 'pct': true, 'heat': true, 'aliases': {}},
     {'name': 'frost', 'columns': ['days_in_window', 'coverage', 'tmin_mean_c', 'tmin_min_c', 'frost_days', 'severe_frost_days'],
-     'z': ['tmin_min_c', 'frost_days'], 'pct': false,
+     'z': ['tmin_min_c', 'frost_days'], 'pct': false, 'heat': false,
      'aliases': {'frost_days': 'frost_days', 'severe_frost_days': 'frost_severe_days', 'frost_days_z': 'frost_days_z'}},
 ] %}
 
@@ -43,7 +48,9 @@ indicators as (
         (ind.{{ column }} - normals.{{ column }}_mean) / nullif(normals.{{ column }}_sd, 0)
             as {{ z_names[column] }},
         {% endfor %}
-        ind.precipitation_mm / nullif(normals.precipitation_mm_mean, 0) * 100 as precipitation_pct_of_normal
+        ind.precipitation_mm / nullif(normals.precipitation_mm_mean, 0) * 100 as precipitation_pct_of_normal,
+        normals.precipitation_mm_mean as precipitation_normal_mm,
+        ind.hot_days - normals.hot_days_mean as hot_days_anomaly_days
     from {{ ref('int_climate__window_indicators') }} as ind
     left join {{ ref('int_climate__window_normals') }} as normals
         on normals.municipality_id = ind.municipality_id
@@ -65,6 +72,12 @@ select
     {% if window.pct %}
     max(case when indicators.window_name = '{{ w }}' then indicators.precipitation_pct_of_normal end)
         as {{ w }}_precipitation_pct_of_normal,
+    max(case when indicators.window_name = '{{ w }}' then indicators.precipitation_normal_mm end)
+        as {{ w }}_precipitation_normal_mm,
+    {% endif %}
+    {% if window.heat %}
+    max(case when indicators.window_name = '{{ w }}' then indicators.hot_days_anomaly_days end)
+        as {{ w }}_hot_days_anomaly_days,
     {% endif %}
     {% for column in window.z %}
     max(case when indicators.window_name = '{{ w }}' then indicators.{{ z_names[column] }} end)

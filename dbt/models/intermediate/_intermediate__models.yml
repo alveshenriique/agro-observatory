@@ -80,6 +80,8 @@ models:
         description: Soma de (chuva − ETo) na janela; balanço hídrico simplificado, sem solo.
       - name: hot_days
         description: Dias com Tmax ≥ `heat_tmax_threshold_c` (32 °C).
+      - name: heat_degree_days
+        description: Graus-dia acima de `heat_degree_day_base_c` (30 °C), soma de max(Tmax − 30, 0).
       - name: longest_dry_spell_days
         description: Maior sequência de dias consecutivos com chuva < `dry_day_precipitation_mm` (1 mm).
       - name: frost_days
@@ -131,3 +133,9 @@ models:
                 values: [log_linear_ols, centered_2x2_moving_average]
       - name: yield_anomaly_pct
         description: Rendimento ÷ tendência − 1 (fração; 0,1 = 10% acima da tendência).
+      - name: biennial_ols_yield_anomaly_pct
+        description: >
+          Culturas bienais: anomalia pela reta log-linear com termo de paridade do ano, ajustada
+          com pelo menos `biennial_ols_min_years` anos. Alternativa à média 2×2, lado a lado.
+      - name: biennial_ols_parity_effect_pct
+        description: Rendimento dos anos ímpares em relação aos pares (fração), pelo mesmo ajuste.
