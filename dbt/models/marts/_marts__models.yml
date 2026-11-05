@@ -8,8 +8,10 @@ models:
       duas vezes.
     columns:
       - name: crop
+        description: "Chave da cultura em inglês (soybean, corn, coffee_total, coffee_arabica, coffee_canephora), a mesma das partições da ingestão."
         data_tests: [unique, not_null]
       - name: is_coffee_breakdown
+        description: Verdadeiro para arábica e canephora, que detalham o café total desde 2012; excluir das somas entre culturas.
         data_tests: [not_null]
       - name: series_break_year
         description: >
@@ -23,6 +25,12 @@ models:
                 expression: "= {{ var('coffee_unit_break_year') }}"
               config:
                 where: "series_break_year is not null"
+      - name: product_id
+        description: Código do produto na classificação 782 do SIDRA (tabela 5457).
+      - name: crop_name_pt
+        description: Nome do produto em português, como publicado pelo IBGE.
+      - name: series_break_note
+        description: Explicação da quebra de série, em português, para quem consulta a dimensão.
 
   - name: dim_year
     description: >
@@ -50,6 +58,8 @@ models:
       - name: is_coffee_processed_unit
         description: Verdadeiro a partir de 2002; filtrar por ele em qualquer série longa de café.
         data_tests: [not_null]
+      - name: decade_label
+        description: "Rótulo da década. Exemplo: \"1990s\"."
 
   - name: dim_municipality
     description: >
@@ -64,6 +74,34 @@ models:
         description: >
           Primeiro ano com dado na PAM para as culturas acompanhadas. Aproximação para o ano de
           criação de municípios desmembrados; nulo quando não há dado.
+      - name: municipality_name
+        description: Nome do município, como na API de Localidades.
+      - name: state_id
+        description: Código IBGE da UF (2 dígitos).
+      - name: state_name
+        description: Nome da UF.
+      - name: region_id
+        description: Código da macrorregião (1 Norte, 2 Nordeste, 3 Sudeste, 4 Sul, 5 Centro-Oeste).
+      - name: region_abbreviation
+        description: Sigla da macrorregião (N, NE, SE, S, CO).
+      - name: region_name
+        description: Nome da macrorregião.
+      - name: intermediate_region_id
+        description: Código da região geográfica intermediária (divisão regional de 2017).
+      - name: intermediate_region_name
+        description: Nome da região intermediária.
+      - name: immediate_region_id
+        description: Código da região geográfica imediata (divisão de 2017), o nível territorial da análise de clima × rendimento.
+      - name: immediate_region_name
+        description: Nome da região imediata.
+      - name: mesoregion_id
+        description: Código da mesorregião (divisão de 1989); nulo em municípios criados depois dela.
+      - name: mesoregion_name
+        description: Nome da mesorregião.
+      - name: microregion_id
+        description: Código da microrregião (divisão de 1989); nulo em municípios criados depois dela.
+      - name: microregion_name
+        description: Nome da microrregião.
 
   - name: fct_crop_production
     description: >
@@ -134,6 +172,20 @@ models:
         description: >
           Valor em milhares de reais a preços do ano-base (`deflation_base_year`), deflacionado
           pela média anual do IPCA. Nulo antes de 1995.
+      - name: planted_or_bearing_area_status
+        description: Status do valor da fonte (reported, absolute_zero, rounded_zero, not_available, not_applicable, confidential).
+      - name: harvested_area_ha
+        description: Área colhida em hectares (variável 216 do IBGE).
+      - name: harvested_area_status
+        description: Status do valor da fonte, como em `planted_or_bearing_area_status`.
+      - name: production_t
+        description: "Quantidade produzida em toneladas (variável 214). Café: em coco até 2001, beneficiado a partir de 2002."
+      - name: production_status
+        description: Status do valor da fonte.
+      - name: production_value_unit
+        description: Moeda do valor nominal, como publicada (Mil Cruzeiros, Mil Cruzados, Mil Reais etc.).
+      - name: production_value_status
+        description: Status do valor da fonte.
 
   - name: fct_crop_climate
     description: >
@@ -199,3 +251,35 @@ models:
         description: Menor Tmin do inverno anterior à colheita (café arábica).
       - name: frost_days
         description: Dias do inverno anterior com Tmin ≤ 2 °C (café arábica).
+      - name: critical_days_in_window
+        description: Dias da janela crítica da soja (plantio da Conab + 2 meses) no ano da colheita.
+      - name: critical_coverage
+        description: Fração dos dias da janela com dado climático; abaixo de 0,9 os indicadores ficam nulos.
+      - name: critical_precipitation_mm
+        description: Chuva acumulada na janela crítica (mm).
+      - name: critical_eto_mm
+        description: Evapotranspiração de referência acumulada na janela crítica (mm).
+      - name: critical_hot_days
+        description: Dias com Tmax ≥ 32 °C na janela crítica.
+      - name: critical_severe_hot_days
+        description: Dias com Tmax ≥ 35 °C na janela crítica.
+      - name: critical_water_balance_z
+        description: Anomalia do balanço hídrico da janela crítica em desvios-padrão da normal 1991–2020 do município.
+      - name: critical_hot_days_z
+        description: Anomalia da contagem de dias quentes (z-score); inflada onde a normal quase não varia, ver `critical_hot_days_anomaly_days`.
+      - name: critical_heat_degree_days_z
+        description: Anomalia dos graus-dia acima de 30 °C (z-score).
+      - name: critical_longest_dry_spell_z
+        description: Anomalia do maior veranico (z-score).
+      - name: critical_has_normal
+        description: Verdadeiro quando o município tem normal 1991–2020 para a janela crítica (pelo menos 25 anos).
+      - name: season_water_balance_z
+        description: Anomalia do balanço hídrico no ciclo inteiro da soja (plantio ao fim da colheita); sinal secundário.
+      - name: flowering_water_balance_z
+        description: "Café arábica: anomalia do balanço hídrico na florada (setembro a novembro do ano anterior)."
+      - name: filling_water_balance_z
+        description: "Café arábica: anomalia do balanço hídrico no enchimento (dezembro do ano anterior a março), a janela principal do café."
+      - name: frost_tmin_min_z
+        description: "Café arábica: anomalia da menor Tmin do inverno anterior (z-score; negativo = inverno mais frio que o normal)."
+      - name: frost_severe_days
+        description: Dias do inverno anterior com Tmin ≤ 0 °C (café arábica).
