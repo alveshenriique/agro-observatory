@@ -24,8 +24,9 @@ Concluído:
 6. Clima: BR-DWGD agregado por município (93,6 milhões de linhas município × dia), janelas fenológicas, anomalias e associação clima × rendimento.
 7. Auditoria: validação externa contra os totais do IBGE e a série da Conab, análise de sensibilidade e correções.
 8. SQL portável (Postgres e BigQuery no mesmo código dbt).
+9. BigQuery em produção (região `southamerica-east1`, modo sandbox): sobem os dados e os modelos derivados, sem o clima diário, e os dois bancos foram validados tabela a tabela.
 
-Próximos passos: warehouse de produção no BigQuery (região `southamerica-east1`, credenciais por Workload Identity Federation, sem chaves), workflow agendado de atualização, dashboard no Power BI.
+Próximos passos: camada de servir dados (arquivos pequenos e pré-agregados para o site) e produto web.
 
 ## Arquitetura
 
@@ -37,20 +38,25 @@ flowchart LR
         sgs[Banco Central SGS 433<br>IPCA]
         dwgd[BR-DWGD v3.2.4<br>clima diário em grade NetCDF]
     end
-    subgraph ingestao [Ingestão em Python]
-        ing[ingest-pam, ingest-localities,<br>ingest-ipca, ingest-brdwgd]
-    end
+    ing[Ingestão em Python<br>ingest-pam, ingest-localities,<br>ingest-ipca, ingest-brdwgd]
     raw[(Parquet<br>data/raw)]
-    pg[(PostgreSQL<br>schema raw)]
-    subgraph dbt [dbt]
-        stg[staging<br>stg_] --> int[intermediate<br>int_] --> marts[marts<br>fct_, dim_, agg_]
+    subgraph local [Desenvolvimento e CI]
+        pg[(PostgreSQL<br>com o clima diário)]
+        dbtpg[dbt<br>staging, intermediate, marts]
     end
-    sidra & loc & sgs & dwgd --> ing --> raw -->|load-raw, COPY| pg --> stg
-    marts --> bi[Power BI]
-    marts --> site[dbt docs<br>GitHub Pages]
+    subgraph producao [Produção]
+        bq[(BigQuery<br>sem o clima diário)]
+        dbtbq["dbt --target prod<br>os mesmos modelos"]
+    end
+    sidra & loc & sgs & dwgd --> ing --> raw
+    raw -->|"load-raw, COPY"| pg --> dbtpg
+    dbtpg -->|export-window-indicators| raw
+    raw -->|"load-raw --target bigquery"| bq --> dbtbq
+    dbtpg --> docs[dbt docs<br>GitHub Pages]
+    dbtbq --> serve[camada de servir dados<br>e produto web, próximas fases]
 ```
 
-Cada camada é idempotente: reexecutar a ingestão ou a carga não duplica dados. O clima passa por uma agregação espacial (média das células da grade dentro de cada município) antes de entrar na raw, e o Postgres o guarda numa tabela particionada por ano. O CI roda o pipeline inteiro, da carga ao último teste do dbt, sobre a amostra versionada em `tests/fixtures/raw/`.
+Cada camada é idempotente: reexecutar a ingestão ou a carga não duplica dados. O clima passa por uma agregação espacial (média das células da grade dentro de cada município) antes de entrar na raw, e o Postgres o guarda numa tabela particionada por ano. O CI roda o pipeline inteiro, da carga ao último teste do dbt, sobre a amostra versionada em `tests/fixtures/raw/`. Em produção, o BigQuery recebe tudo menos o clima diário: os indicadores climáticos por janela, calculados no Postgres, sobem como uma fonte derivada, e o dbt constrói ali os mesmos modelos. O site não vai consultar o warehouse, e sim arquivos pré-agregados numa CDN (ver [BigQuery em produção](docs/DECISOES.md#bigquery-em-produção-sandbox-e-arquitetura-enxuta)).
 
 ## Como rodar
 
@@ -105,7 +111,7 @@ Esses números medem associação, não causalidade: preço, pragas, tecnologia 
 
 ## Documentação
 
-- [docs/DECISOES.md](docs/DECISOES.md): decisões de engenharia, com as alternativas descartadas (stack, camadas, idempotência, particionamento, CI, SQL portável, planejador do Postgres).
+- [docs/DECISOES.md](docs/DECISOES.md): decisões de engenharia, com as alternativas descartadas (stack, camadas, idempotência, particionamento, CI, SQL portável, planejador do Postgres, BigQuery em produção), e o [procedimento de publicação no BigQuery](docs/DECISOES.md#operação-do-bigquery-recarga-e-consumo-de-cota).
 - [docs/METODOLOGIA.md](docs/METODOLOGIA.md): como os números são calculados (valores especiais da PAM, deflação, quebra de unidade do café, janelas, anomalias, pesos, limiares, limitações).
 - [docs/VALIDACAO.md](docs/VALIDACAO.md): validação externa contra o IBGE e a Conab, análise de sensibilidade, achados da auditoria e correções.
 - [Documentação dos modelos do dbt](https://alveshenriique.github.io/agro-observatory/): linhagem, descrição de cada tabela e coluna, testes. Publicada no GitHub Pages a cada merge na `main`.
