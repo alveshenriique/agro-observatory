@@ -16,6 +16,9 @@ htmlcov/
 # Data (raw files and Parquet never go to Git)
 data/
 
+# CI: window indicators exported to test the BigQuery layout on Postgres
+derived/
+
 # dbt
 target/
 logs/
