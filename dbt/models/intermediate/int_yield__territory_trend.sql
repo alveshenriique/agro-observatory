@@ -52,7 +52,7 @@ territory_years as (
         sum(production_t) as production_t,
         sum(planted_or_bearing_area_ha) as planted_or_bearing_area_ha,
         sum(harvested_area_ha) as harvested_area_ha,
-        sum(production_t) / nullif(sum(harvested_area_ha), 0) * 1000 as yield_kg_ha
+        {{ as_float('sum(production_t)') }} / nullif(sum(harvested_area_ha), 0) * 1000 as yield_kg_ha
     from base
     group by 1, 2, 3, 4, 5
     {% if not loop.last %}union all{% endif %}

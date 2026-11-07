@@ -66,3 +66,13 @@
 {% macro bigquery__date_from_parts(year, month, day) -%}
     date({{ year }}, {{ month }}, {{ day }})
 {%- endmacro %}
+
+
+-- Ratios, logarithms and exponentials are computed in floating point on every warehouse. On
+-- BigQuery a NUMERIC quotient (and LN or EXP of a NUMERIC) is rounded to 9 decimal places at
+-- each step, which broke identities checked to 1e-9 (shares summing to 1, the growth
+-- decomposition closing) and would make chained values (the IPCA index, log-linear trends)
+-- drift from Postgres. NUMERIC stays for measured quantities (tonnes, hectares, money).
+{% macro as_float(expression) -%}
+    cast({{ expression }} as {{ dbt.type_float() }})
+{%- endmacro %}

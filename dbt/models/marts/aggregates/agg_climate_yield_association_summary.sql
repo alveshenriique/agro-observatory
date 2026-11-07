@@ -23,24 +23,24 @@ select
     corr(heat_degree_days_z, yield_anomaly_pct) as corr_heat_degree_days_yield,
     -- Biennial crops: the same correlation with the alternative (OLS + parity) anomaly.
     corr(water_balance_z, biennial_ols_yield_anomaly_pct) as corr_water_balance_biennial_ols_yield,
-    cast(count(case when yield_anomaly_pct < 0 then 1 end) as numeric) / count(*) as negative_anomaly_share_all_years,
+    cast(count(case when yield_anomaly_pct < 0 then 1 end) as {{ dbt.type_float() }}) / count(*) as negative_anomaly_share_all_years,
 
     count(case when is_water_deficit then 1 end) as water_deficit_years,
     avg(case when is_water_deficit then yield_anomaly_pct end) as mean_anomaly_water_deficit_years,
     avg(case when not is_water_deficit then yield_anomaly_pct end) as mean_anomaly_no_water_deficit_years,
-    cast(count(case when is_water_deficit and yield_anomaly_pct < 0 then 1 end) as numeric)
+    cast(count(case when is_water_deficit and yield_anomaly_pct < 0 then 1 end) as {{ dbt.type_float() }})
         / nullif(count(case when is_water_deficit then 1 end), 0) as water_deficit_hit_rate,
 
     count(case when is_heat_stress then 1 end) as heat_stress_years,
     avg(case when is_heat_stress then yield_anomaly_pct end) as mean_anomaly_heat_stress_years,
     avg(case when not is_heat_stress then yield_anomaly_pct end) as mean_anomaly_no_heat_stress_years,
-    cast(count(case when is_heat_stress and yield_anomaly_pct < 0 then 1 end) as numeric)
+    cast(count(case when is_heat_stress and yield_anomaly_pct < 0 then 1 end) as {{ dbt.type_float() }})
         / nullif(count(case when is_heat_stress then 1 end), 0) as heat_stress_hit_rate,
 
     count(case when is_frost then 1 end) as frost_years,
     avg(case when is_frost then yield_anomaly_pct end) as mean_anomaly_frost_years,
     avg(case when not is_frost then yield_anomaly_pct end) as mean_anomaly_no_frost_years,
-    cast(count(case when is_frost and yield_anomaly_pct < 0 then 1 end) as numeric)
+    cast(count(case when is_frost and yield_anomaly_pct < 0 then 1 end) as {{ dbt.type_float() }})
         / nullif(count(case when is_frost then 1 end), 0) as frost_hit_rate,
     avg(case when is_frost then biennial_ols_yield_anomaly_pct end) as mean_biennial_ols_anomaly_frost_years,
     avg(case when is_water_deficit then biennial_ols_yield_anomaly_pct end) as mean_biennial_ols_anomaly_water_deficit_years

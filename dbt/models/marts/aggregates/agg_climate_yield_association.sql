@@ -99,7 +99,7 @@ by_territory as (
                 then weight * precipitation_mm end)
             / nullif(sum(case when precipitation_mm is not null and precipitation_normal_mm is not null
                 then weight * precipitation_normal_mm end), 0) * 100 as precipitation_pct_of_normal,
-        sum(case when frost_days >= 1 then weight end)
+        {{ as_float('sum(case when frost_days >= 1 then weight end)') }}
             / nullif(sum(case when frost_days is not null then weight end), 0) as frost_area_share
     from municipal
     where weight is not null
@@ -111,7 +111,7 @@ by_territory as (
 with_coverage as (
     select
         *,
-        coalesce(weight_with_normal / nullif(total_weight, 0), 0) >= 0.5 as is_municipal_normal_available
+        coalesce({{ as_float('weight_with_normal') }} / nullif(total_weight, 0), 0) >= 0.5 as is_municipal_normal_available
     from by_territory
 ),
 

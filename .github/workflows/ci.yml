@@ -76,3 +76,17 @@ jobs:
       - name: dbt build
         working-directory: dbt
         run: uv run dbt build
+
+      # The BigQuery production target has no daily climate: it reads the window indicators
+      # computed here from a derived source. Test that path on Postgres with the same models
+      # and tests: export the indicators, load them as the derived source, rebuild in that mode.
+      - name: Export the window indicators (derived source)
+        run: uv run export-window-indicators --out derived/climate/window_indicators.parquet
+
+      - name: Load the derived source into Postgres
+        run: uv run load-raw --data-dir derived --sources climate_window_indicators
+
+      - name: dbt build with the derived climate source (BigQuery layout)
+        working-directory: dbt
+        run: |
+          uv run dbt build --vars '{use_derived_climate_source: true}'

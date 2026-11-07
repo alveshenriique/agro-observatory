@@ -7,6 +7,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "google-cloud-bigquery>=3.47",
     "httpx>=0.28.1",
     "netcdf4>=1.7.4",
     "psycopg[binary]>=3.3.6",
@@ -23,6 +24,8 @@ ingest-localities = "agro_observatory.ingestion.localities:main"
 ingest-ipca = "agro_observatory.ingestion.ipca:main"
 load-raw = "agro_observatory.load_raw:main"
 ingest-brdwgd = "agro_observatory.ingestion.brdwgd:main"
+export-window-indicators = "agro_observatory.export_window_indicators:main"
+bq-dbt = "agro_observatory.bq_dbt:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]
@@ -32,6 +35,7 @@ build-backend = "uv_build"
 dev = [
     "colorspacious>=1.1.2",
     "daltonlens>=0.1.5",
+    "dbt-bigquery~=1.12.2",
     "dbt-core>=1.12.5",
     "dbt-postgres>=1.11.0",
     "matplotlib>=3.11.2",

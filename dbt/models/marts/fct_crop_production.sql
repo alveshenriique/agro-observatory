@@ -27,7 +27,7 @@ select
 
     -- Recalculated yield; the IBGE figure is kept only for the consistency test.
     case
-        when pam.harvested_area_ha > 0 then pam.production_t * 1000 / pam.harvested_area_ha
+        when pam.harvested_area_ha > 0 then {{ as_float('pam.production_t') }} * 1000 / pam.harvested_area_ha
     end as yield_kg_ha,
     pam.ibge_yield_kg_ha,
 

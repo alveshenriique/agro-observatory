@@ -74,7 +74,7 @@ periods as (
 periods_with_share as (
     select
         *,
-        production_t / nullif(
+        {{ as_float('production_t') }} / nullif(
             max(case when region_id = 0 then production_t end)
                 over (partition by crop, anchor_year),
             0
@@ -105,8 +105,8 @@ compared as (
         p0.harvested_area_ha as start_harvested_area_ha,
         p1.harvested_area_ha as end_harvested_area_ha,
         p0.share_of_national_production as start_share_of_national_production,
-        p0.production_t / nullif(p0.harvested_area_ha, 0) as start_yield_t_ha,
-        p1.production_t / nullif(p1.harvested_area_ha, 0) as end_yield_t_ha
+        {{ as_float('p0.production_t') }} / nullif(p0.harvested_area_ha, 0) as start_yield_t_ha,
+        {{ as_float('p1.production_t') }} / nullif(p1.harvested_area_ha, 0) as end_yield_t_ha
     from pairs
     inner join periods_with_share as p0
         on p0.crop = pairs.crop and p0.anchor_year = pairs.start_anchor
@@ -122,9 +122,9 @@ logs as (
         *,
         -- Undefined (null) when a period has no production or area (e.g. soy in the North in 1975).
         case when start_production_t > 0 and end_production_t > 0
-            then ln(end_production_t / start_production_t) end as ln_production_growth,
+            then ln({{ as_float('end_production_t') }} / start_production_t) end as ln_production_growth,
         case when start_harvested_area_ha > 0 and end_harvested_area_ha > 0
-            then ln(end_harvested_area_ha / start_harvested_area_ha) end as ln_area_effect,
+            then ln({{ as_float('end_harvested_area_ha') }} / start_harvested_area_ha) end as ln_area_effect,
         case when start_yield_t_ha > 0 and end_yield_t_ha > 0
             then ln(end_yield_t_ha / start_yield_t_ha) end as ln_yield_effect
     from compared
