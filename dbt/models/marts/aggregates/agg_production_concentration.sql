@@ -13,7 +13,7 @@ with production as (
 ranked as (
     select
         *,
-        production_t / sum(production_t) over (partition by crop, year) as share,
+        {{ as_float('production_t') }} / sum({{ as_float('production_t') }}) over (partition by crop, year) as share,
         row_number() over (
             partition by crop, year order by production_t desc, municipality_id
         ) as production_rank
@@ -34,7 +34,7 @@ select
     sum(production_t) as national_production_t,
     min(case when cumulative_share >= 0.5 then production_rank end) as municipalities_for_50pct,
     min(case when cumulative_share >= 0.8 then production_rank end) as municipalities_for_80pct,
-    cast(min(case when cumulative_share >= 0.5 then production_rank end) as numeric) / count(*)
+    cast(min(case when cumulative_share >= 0.5 then production_rank end) as {{ dbt.type_float() }}) / count(*)
         as share_of_producers_for_50pct,
     -- HHI on the 0-10,000 scale (sum of squared percentage shares).
     sum(power(share * 100, 2)) as hhi

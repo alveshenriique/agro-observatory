@@ -33,7 +33,7 @@ with mg as (
 with_yield as (
     select
         *,
-        production_t * 1000 / nullif(harvested_area_ha, 0) as yield_kg_ha
+        {{ as_float('production_t') }} * 1000 / nullif(harvested_area_ha, 0) as yield_kg_ha
     from mg
 ),
 
@@ -66,9 +66,9 @@ select
     production_t,
     harvested_area_ha,
     yield_kg_ha,
-    production_t / nullif(previous_production_t, 0) - 1 as production_change_vs_previous_year,
+    {{ as_float('production_t') }} / nullif(previous_production_t, 0) - 1 as production_change_vs_previous_year,
     production_centered_trend_t,
-    production_t / nullif(production_centered_trend_t, 0) as production_ratio_to_trend,
+    {{ as_float('production_t') }} / nullif(production_centered_trend_t, 0) as production_ratio_to_trend,
     yield_centered_trend_kg_ha,
     yield_kg_ha / nullif(yield_centered_trend_kg_ha, 0) as yield_ratio_to_trend,
     case

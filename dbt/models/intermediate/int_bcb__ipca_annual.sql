@@ -6,7 +6,7 @@ with monthly as (
     select
         reference_month,
         -- Cumulative product of (1 + change), computed as exp(sum(ln(...))).
-        exp(sum(ln(1 + monthly_change_pct / 100)) over (order by reference_month)) as price_index
+        exp(sum(ln(1 + {{ as_float('monthly_change_pct') }} / 100)) over (order by reference_month)) as price_index
     from {{ ref('stg_bcb__ipca') }}
 ),
 

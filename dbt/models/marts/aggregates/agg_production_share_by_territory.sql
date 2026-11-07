@@ -61,7 +61,7 @@ grid as (
 select
     *,
     sum(production_t) over (partition by crop, year, territory_level) as national_production_t,
-    production_t
-        / nullif(sum(production_t) over (partition by crop, year, territory_level), 0)
+    {{ as_float('production_t') }}
+        / nullif(sum({{ as_float('production_t') }}) over (partition by crop, year, territory_level), 0)
         as share_of_national_production
 from grid
