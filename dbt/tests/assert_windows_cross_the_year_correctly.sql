@@ -1,3 +1,6 @@
+-- Reads the daily climate, which only the local Postgres has (macro use_derived_climate_source).
+{{ config(enabled=not use_derived_climate_source()) }}
+
 -- Explicit check of the turn of the year: for Sorriso-MT (soybean, critical window
 -- Nov-Dec of the previous year + Jan-Feb of the harvest year), the window indicators must
 -- equal what is computed directly from the daily data over exactly those dates. Also checks

@@ -1,5 +1,7 @@
 # Credentials come from environment variables (see .env.example); run dbt with
-# `uv run --env-file ../.env dbt ...` from this folder.
+# `uv run --env-file ../.env dbt ...` from this folder. The `prod` target (BigQuery) has no
+# credentials at all: it uses the Application Default Credentials of the machine
+# (`gcloud auth application-default login`), and writes to it go through `uv run bq-dbt`.
 agro_observatory:
   target: dev
   outputs:
@@ -12,3 +14,15 @@ agro_observatory:
       dbname: "{{ env_var('POSTGRES_DB') }}"
       schema: dbt
       threads: 4
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('BIGQUERY_PROJECT', '') }}"
+      dataset: dbt  # unused: every model, seed and source sets its own dataset
+      location: "{{ env_var('BIGQUERY_LOCATION', 'southamerica-east1') }}"
+      threads: 4
+      priority: interactive
+      job_execution_timeout_seconds: 900
+      job_retries: 1
+      # Safety cap per query (the largest scan in this project is about 1 GB).
+      maximum_bytes_billed: 10000000000

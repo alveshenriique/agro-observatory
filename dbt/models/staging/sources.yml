@@ -4,8 +4,12 @@ sources:
   - name: raw
     description: >
       Camada raw carregada pelo `load-raw` a partir dos Parquet em data/raw. As colunas da fonte
-      estão em texto, com os nomes exatos das APIs (case-sensitive, alguns com hífen), mais os
-      metadados `_source_url`, `_ingested_at`, `_source_file` e `_loaded_at`.
+      estão em texto, com os nomes exatos das APIs (case-sensitive, alguns com hífen; no BigQuery,
+      que não aceita hífen, o hífen vira `_`), mais os metadados `_ingested_at` e `_loaded_at`,
+      que o staging lê. Os demais metadados dependem do banco: no Postgres, cada linha também
+      guarda `_source_url` e `_source_file`, que a carga usa para substituir um arquivo de cada
+      vez; no BigQuery, onde cada tabela é substituída inteira, a URL de origem fica uma vez por
+      arquivo em `raw._load_manifest`.
     schema: raw
     tables:
       - name: pam
@@ -55,6 +59,8 @@ sources:
             description: Método de associação município → células.
 
       - name: brdwgd_municipality_daily
+        config:
+          enabled: "{{ not var('use_derived_climate_source', target.type == 'bigquery') }}"
         description: >
           Clima diário por município (BR-DWGD v3.2.4, grade de 0,1° agregada pela ingestão):
           chuva, ETo, Tmax e Tmin. Exceção à raw em texto: colunas tipadas, por ser um produto
@@ -73,3 +79,13 @@ sources:
             description: Temperatura mínima do ar em °C.
           - name: eto_mm
             description: Evapotranspiração de referência em mm.
+
+      - name: climate_window_indicators
+        config:
+          enabled: "{{ var('use_derived_climate_source', target.type == 'bigquery') }}"
+        description: >
+          Fonte derivada: o resultado de `int_climate__window_indicators` calculado no Postgres
+          local a partir do clima diário, exportado por `export-window-indicators` e carregado
+          pelo `load-raw`. Existe só nos warehouses que não recebem o clima diário (o BigQuery de
+          produção), onde o modelo passa a ser uma view sobre ela; tipos e colunas iguais aos do
+          modelo.

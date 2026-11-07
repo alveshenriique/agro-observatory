@@ -9,11 +9,14 @@
 -- estimated at 87 rows against 40,320 real), so it may join the two aggregations of it with a
 -- nested loop over 350,000 × 350,000 rows (over an hour) instead of a hash join (~4 minutes).
 -- This is a workaround for that specific misestimate, not a general practice (see docs/DECISOES.md).
+-- On a warehouse without the daily climate (BigQuery production), the same columns come from
+-- the derived source computed here on Postgres (macro `use_derived_climate_source`), as a view.
+{% set derived = use_derived_climate_source() %}
 {{ config(
-    materialized='table',
+    materialized=('view' if derived else 'table'),
     pre_hook=(
         ["set work_mem = '512MB'", "set enable_nestloop = off"]
-        if target.type == 'postgres' else []
+        if target.type == 'postgres' and not derived else []
     )
 ) }}
 
@@ -24,6 +27,25 @@
     'tmin_mean_c', 'tmin_min_c', 'hot_days', 'severe_hot_days', 'heat_degree_days', 'dry_days',
     'frost_days', 'severe_frost_days',
 ] %}
+
+{% if derived %}
+
+select
+    municipality_id,
+    crop,
+    state_abbreviation,
+    window_name,
+    harvest_year,
+    days_in_window,
+    days_with_data,
+    coverage,
+    {% for indicator in indicators %}
+    {{ indicator }},
+    {% endfor %}
+    longest_dry_spell_days
+from {{ source('raw', 'climate_window_indicators') }}
+
+{% else %}
 
 with calendar as (
     select crop, state_abbreviation, window_name, month, year_offset
@@ -185,3 +207,5 @@ left join longest_dry_spell
     and longest_dry_spell.crop = aggregated.crop
     and longest_dry_spell.window_name = aggregated.window_name
     and longest_dry_spell.harvest_year = aggregated.harvest_year
+
+{% endif %}

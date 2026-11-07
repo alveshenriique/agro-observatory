@@ -42,6 +42,13 @@ vars:
   territory_normal_min_years: 15  # years in the normal period needed to re-standardize a territory's series
   heat_degree_day_base_c: 30  # degree-days above this Tmax, a continuous heat measure
   heat_min_extra_hot_days: 5  # heat stress needs z >= stress_z_threshold AND this many hot days above normal
+  # Phase 10b: `use_derived_climate_source` (default: true on BigQuery, false elsewhere) makes the
+  # window indicators come from the derived source instead of the daily climate; see
+  # macros/warehouse_layout.sql. Not set here because its default depends on the target.
+
+# Writes to a BigQuery target need the confirmation of `uv run bq-dbt` (sandbox storage quota).
+on-run-start:
+  - "{{ guard_bigquery_writes() }}"
 
 flags:
   send_anonymous_usage_stats: false
