@@ -1,4 +1,4 @@
-"""Load the raw Parquet files into the `raw` schema in PostgreSQL.
+"""Load the raw Parquet files into the `raw` schema in PostgreSQL (or BigQuery, see below).
 
 One table per source, mirroring the Parquet columns (source columns as text, no keys,
 indexes or type casts: that is dbt's job), plus `_source_file` and `_loaded_at`.
@@ -12,6 +12,9 @@ Each file is loaded in its own transaction with COPY, according to the source ki
 Files whose `_ingested_at` already matches what is loaded are skipped (unless --force),
 so a rerun only reloads what the ingestion actually changed. Data from files no longer on
 disk (orphans) is reported, and deleted only with --prune.
+
+With `--target bigquery`, the BigQuery backend (load_raw_bigquery.py) replaces each table with
+one load job instead, after showing the storage-quota estimate and asking for confirmation.
 """
 
 import argparse
@@ -79,6 +82,19 @@ SOURCES = {
         typed=True,
         partition_column="date",
     ),
+    # Derived source: the window indicators computed by dbt on Postgres, exported by
+    # `export-window-indicators`. Needed only where the daily climate is not loaded (BigQuery),
+    # or to test that path on Postgres.
+    "climate_window_indicators": Source(
+        "climate_window_indicators",
+        "climate/window_indicators.parquet",
+        Kind.SNAPSHOT,
+        typed=True,
+    ),
+}
+DEFAULT_SOURCES = {
+    "postgres": [name for name in SOURCES if name != "climate_window_indicators"],
+    "bigquery": ["pam", "localities", "ipca", "climate_cells", "climate_window_indicators"],
 }
 
 TYPED_POSTGRES_TYPES = {
@@ -120,6 +136,8 @@ def postgres_columns(schema: pa.Schema, source: Source) -> list[tuple[str, str]]
             columns.append((field.name, "timestamptz"))
         elif source.typed and field.type in TYPED_POSTGRES_TYPES:
             columns.append((field.name, TYPED_POSTGRES_TYPES[field.type]))
+        elif source.typed and pa.types.is_decimal(field.type):
+            columns.append((field.name, "numeric"))
         else:
             raise SchemaMismatchError(f"unsupported raw column type: {field.name} {field.type}")
     if source.kind is Kind.YEAR_PARTITIONED:
@@ -388,10 +406,21 @@ def conninfo_from_env() -> str:
 def main(argv: list[str] | None = None) -> int:
     configure_logging()
     parser = argparse.ArgumentParser(
-        prog="load-raw", description="Load raw Parquet files into the Postgres raw schema."
+        prog="load-raw",
+        description="Load raw Parquet files into the raw schema (Postgres) or dataset (BigQuery).",
     )
     parser.add_argument(
-        "--sources", nargs="+", choices=list(SOURCES), default=list(SOURCES), help="default: all"
+        "--target",
+        choices=list(DEFAULT_SOURCES),
+        default="postgres",
+        help="postgres (default) or bigquery (writes need confirmation)",
+    )
+    parser.add_argument(
+        "--sources",
+        nargs="+",
+        choices=list(SOURCES),
+        help=f"default: postgres {DEFAULT_SOURCES['postgres']}; "
+        f"bigquery {DEFAULT_SOURCES['bigquery']}",
     )
     parser.add_argument(
         "--force", action="store_true", help="reload files even if they are unchanged"
@@ -400,11 +429,28 @@ def main(argv: list[str] | None = None) -> int:
         "--prune", action="store_true", help="delete rows whose source file is no longer on disk"
     )
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
+    parser.add_argument(
+        "--yes", action="store_true", help="BigQuery: confirm the write without the prompt"
+    )
+    parser.add_argument(
+        "--empty",
+        action="store_true",
+        help="BigQuery: create the tables with zero rows (schema only), to validate dbt cheaply",
+    )
     args = parser.parse_args(argv)
+    sources = args.sources or DEFAULT_SOURCES[args.target]
 
     load_dotenv(find_dotenv(usecwd=True))
+    if args.target == "bigquery":
+        if args.prune:
+            parser.error("--prune is Postgres only: BigQuery tables are replaced entirely")
+        from agro_observatory import load_raw_bigquery
+
+        return load_raw_bigquery.run(sources, args.data_dir, args.force, args.empty, args.yes)
+    if args.yes or args.empty:
+        parser.error("--yes and --empty only apply to --target bigquery")
     with psycopg.connect(conninfo_from_env(), autocommit=True) as conn:
-        for name in args.sources:
+        for name in sources:
             load_source(conn, SOURCES[name], args.data_dir, args.force, args.prune)
     return 0
 
