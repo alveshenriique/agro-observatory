@@ -25,8 +25,9 @@ Concluído:
 7. Auditoria: validação externa contra os totais do IBGE e a série da Conab, análise de sensibilidade e correções.
 8. SQL portável (Postgres e BigQuery no mesmo código dbt).
 9. BigQuery em produção (região `southamerica-east1`, modo sandbox): sobem os dados e os modelos derivados, sem o clima diário, e os dois bancos foram validados tabela a tabela.
+10. Camada de servir dados: views `serve_*` e o comando `export-serving` geram os arquivos do site (JSON pré-agregado e malha simplificada em TopoJSON), validados por JSON Schema e conciliados com os marts; o pacote de cada versão vai para um release do GitHub ([contrato dos dados](docs/CONTRATO_DE_DADOS.md)).
 
-Próximos passos: camada de servir dados (arquivos pequenos e pré-agregados para o site) e produto web.
+Próximos passos: publicar o primeiro pacote de dados e construir o produto web.
 
 ## Arquitetura
 
@@ -53,10 +54,12 @@ flowchart LR
     dbtpg -->|export-window-indicators| raw
     raw -->|"load-raw --target bigquery"| bq --> dbtbq
     dbtpg --> docs[dbt docs<br>GitHub Pages]
-    dbtbq --> serve[camada de servir dados<br>e produto web, próximas fases]
+    dbtbq --> serve["views serve_*<br>export-serving"]
+    serve -->|JSON e TopoJSON| rel[(release do GitHub<br>pacote de dados)]
+    rel --> site[produto web<br>próxima fase]
 ```
 
-Cada camada é idempotente: reexecutar a ingestão ou a carga não duplica dados. O clima passa por uma agregação espacial (média das células da grade dentro de cada município) antes de entrar na raw, e o Postgres o guarda numa tabela particionada por ano. O CI roda o pipeline inteiro, da carga ao último teste do dbt, sobre a amostra versionada em `tests/fixtures/raw/`. Em produção, o BigQuery recebe tudo menos o clima diário: os indicadores climáticos por janela, calculados no Postgres, sobem como uma fonte derivada, e o dbt constrói ali os mesmos modelos. O site não vai consultar o warehouse, e sim arquivos pré-agregados numa CDN (ver [BigQuery em produção](docs/DECISOES.md#bigquery-em-produção-sandbox-e-arquitetura-enxuta)).
+Cada camada é idempotente: reexecutar a ingestão ou a carga não duplica dados. O clima passa por uma agregação espacial (média das células da grade dentro de cada município) antes de entrar na raw, e o Postgres o guarda numa tabela particionada por ano. O CI roda o pipeline inteiro, da carga ao último teste do dbt, sobre a amostra versionada em `tests/fixtures/raw/`. Em produção, o BigQuery recebe tudo menos o clima diário: os indicadores climáticos por janela, calculados no Postgres, sobem como uma fonte derivada, e o dbt constrói ali os mesmos modelos. O site não vai consultar o warehouse: a camada de servir dados gera, a partir dele, arquivos pequenos e pré-agregados, que vão para um release do GitHub e daí para a CDN (ver [BigQuery em produção](docs/DECISOES.md#bigquery-em-produção-sandbox-e-arquitetura-enxuta) e [Camada de servir dados](docs/DECISOES.md#camada-de-servir-dados-arquivos-estáticos-para-o-site)).
 
 ## Como rodar
 
@@ -111,10 +114,11 @@ Esses números medem associação, não causalidade: preço, pragas, tecnologia 
 
 ## Documentação
 
-- [docs/DECISOES.md](docs/DECISOES.md): decisões de engenharia, com as alternativas descartadas (stack, camadas, idempotência, particionamento, CI, SQL portável, planejador do Postgres, BigQuery em produção), e o [procedimento de publicação no BigQuery](docs/DECISOES.md#operação-do-bigquery-recarga-e-consumo-de-cota).
+- [docs/DECISOES.md](docs/DECISOES.md): decisões de engenharia, com as alternativas descartadas (stack, camadas, idempotência, particionamento, CI, SQL portável, planejador do Postgres, BigQuery em produção, camada de servir dados), e o [procedimento de publicação no BigQuery](docs/DECISOES.md#operação-do-bigquery-recarga-e-consumo-de-cota).
 - [docs/METODOLOGIA.md](docs/METODOLOGIA.md): como os números são calculados (valores especiais da PAM, deflação, quebra de unidade do café, janelas, anomalias, pesos, limiares, limitações).
 - [docs/VALIDACAO.md](docs/VALIDACAO.md): validação externa contra o IBGE e a Conab, análise de sensibilidade, achados da auditoria e correções.
+- [docs/CONTRATO_DE_DADOS.md](docs/CONTRATO_DE_DADOS.md): os arquivos que o site lê, o significado de cada valor, as regras de validade garantidas nos dados e as regras para o site.
 - [Documentação dos modelos do dbt](https://alveshenriique.github.io/agro-observatory/): linhagem, descrição de cada tabela e coluna, testes. Publicada no GitHub Pages a cada merge na `main`.
-- O gráfico acima é gerado por `scripts/make_readme_chart.py` a partir dos marts.
+- O gráfico acima é gerado por `scripts/make_readme_chart.py` a partir dos marts e da view do achado principal, a mesma que alimenta o site.
 
 Os dados climáticos são do BR-DWGD (Xavier, A. C., Scanlon, B. R., King, C. W., & Alves, A. I. (2022). New improved Brazilian daily weather gridded data (1961–2020). *International Journal of Climatology*, 42(16), 8390–8404. https://doi.org/10.1002/joc.7731).
