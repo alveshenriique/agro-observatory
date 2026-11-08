@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manifest.json",
+  "description": "Manifesto da versão dos dados: cada arquivo com esquema, tamanho e sha256, as checagens de contrato e de conciliação com os marts, a origem (warehouse, commit) e as estatísticas da malha. Usado pelo pacote de release e pela auditoria; o site não precisa lê-lo.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "warehouse": {
+      "enum": [
+        "bigquery",
+        "postgres"
+      ]
+    },
+    "sample": {
+      "type": "boolean"
+    },
+    "git": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "commit",
+        "dirty"
+      ],
+      "additionalProperties": false
+    },
+    "mesh": {
+      "type": "object"
+    },
+    "query_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Bytes processados no BigQuery pela exportação (null no Postgres)."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "schema": {
+            "type": "string"
+          },
+          "schema_version": {
+            "type": "integer"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "gzip_bytes": {
+            "type": "integer"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "schema",
+          "schema_version",
+          "bytes",
+          "gzip_bytes",
+          "sha256"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "fail"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "detail"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "meta",
+    "warehouse",
+    "sample",
+    "git",
+    "mesh",
+    "query_bytes",
+    "files",
+    "checks"
+  ],
+  "additionalProperties": false
+}

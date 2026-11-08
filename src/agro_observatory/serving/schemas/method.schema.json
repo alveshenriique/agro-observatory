@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "method.json",
+  "description": "Dados da página Método: parâmetros, validação externa contra o IBGE (célula a célula) e a Conab, e o resumo dos testes do dbt do build publicado.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "parameters": {
+      "$ref": "common.schema.json#/$defs/parameters"
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "sidra_summary": {
+          "type": "object",
+          "description": "Células comparadas com os agregados do IBGE por nível, variável e situação.",
+          "properties": {
+            "territory_level": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "variable": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "status": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "match",
+                  "documented",
+                  "mismatch"
+                ]
+              }
+            },
+            "cells": {
+              "$ref": "common.schema.json#/$defs/integers"
+            },
+            "first_year": {
+              "$ref": "common.schema.json#/$defs/years"
+            },
+            "last_year": {
+              "$ref": "common.schema.json#/$defs/years"
+            }
+          },
+          "required": [
+            "territory_level",
+            "variable",
+            "status",
+            "cells",
+            "first_year",
+            "last_year"
+          ],
+          "additionalProperties": false
+        },
+        "sidra_discrepancies": {
+          "type": "object",
+          "description": "Células que não são iguais, com o motivo documentado.",
+          "properties": {
+            "territory_level": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "territory_id": {
+              "$ref": "common.schema.json#/$defs/integers"
+            },
+            "territory_name": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "common.schema.json#/$defs/series"
+              }
+            },
+            "year": {
+              "$ref": "common.schema.json#/$defs/years"
+            },
+            "variable": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "official_value": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "our_value": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "difference": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "relative_difference": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "status": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "documented",
+                  "mismatch"
+                ]
+              }
+            },
+            "reason": {
+              "$ref": "common.schema.json#/$defs/nullable_strings"
+            }
+          },
+          "required": [
+            "territory_level",
+            "territory_id",
+            "territory_name",
+            "series",
+            "year",
+            "variable",
+            "official_value",
+            "our_value",
+            "difference",
+            "relative_difference",
+            "status",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "conab": {
+          "type": "object",
+          "description": "Soja por UF e ano-safra: PAM × Conab.",
+          "properties": {
+            "state_abbreviation": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "harvest_year": {
+              "$ref": "common.schema.json#/$defs/years"
+            },
+            "conab_planted_area_ha": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "pam_planted_area_ha": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "planted_area_relative_difference": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "conab_production_t": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "pam_production_t": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "production_relative_difference": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "is_compared": {
+              "$ref": "common.schema.json#/$defs/nullable_booleans"
+            },
+            "is_beyond_tolerance": {
+              "$ref": "common.schema.json#/$defs/nullable_booleans"
+            }
+          },
+          "required": [
+            "state_abbreviation",
+            "harvest_year",
+            "conab_planted_area_ha",
+            "pam_planted_area_ha",
+            "planted_area_relative_difference",
+            "conab_production_t",
+            "pam_production_t",
+            "production_relative_difference",
+            "is_compared",
+            "is_beyond_tolerance"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "sidra_summary",
+        "sidra_discrepancies",
+        "conab"
+      ],
+      "additionalProperties": false
+    },
+    "dbt_tests": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "dbt_version": {
+              "type": "string"
+            },
+            "invocation_id": {
+              "type": "string"
+            },
+            "generated_at": {
+              "type": "string"
+            },
+            "target": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "command": {
+              "type": "string"
+            },
+            "total": {
+              "type": "integer"
+            },
+            "pass": {
+              "type": "integer"
+            },
+            "warn": {
+              "type": "integer"
+            },
+            "error": {
+              "type": "integer"
+            },
+            "fail": {
+              "type": "integer"
+            },
+            "skipped": {
+              "type": "integer"
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "dbt_version",
+            "invocation_id",
+            "generated_at",
+            "target",
+            "command",
+            "total",
+            "pass",
+            "warn",
+            "error",
+            "fail",
+            "skipped",
+            "warnings"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "meta",
+    "parameters",
+    "validation",
+    "dbt_tests"
+  ],
+  "additionalProperties": false
+}

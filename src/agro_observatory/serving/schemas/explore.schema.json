@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "explore/<série>/<medida>.json",
+  "description": "Matriz município × ano de uma série e uma medida, para o mapa animado da página Explorar. values tem uma linha por município, na ordem de municipalities.json, e uma coluna por ano de years. null = sem dado (o município não tinha linha na PAM naquele ano, por exemplo por ainda não existir); 0 = zero publicado pelo IBGE. Nenhum dado de clima, anomalia ou associação aparece aqui.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "series": {
+      "$ref": "common.schema.json#/$defs/series"
+    },
+    "measure": {
+      "enum": [
+        "production_t",
+        "harvested_area_ha",
+        "planted_or_bearing_area_ha",
+        "production_value_real_thousand_brl"
+      ]
+    },
+    "unit_pt": {
+      "type": "string"
+    },
+    "municipality_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "years": {
+      "$ref": "common.schema.json#/$defs/years"
+    },
+    "values": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+      }
+    },
+    "country_total": {
+      "$ref": "common.schema.json#/$defs/nullable_non_negative_integers",
+      "description": "Total do Brasil por ano (serve_territory_production), para a linha do tempo."
+    },
+    "municipalities_with_data": {
+      "$ref": "common.schema.json#/$defs/nullable_non_negative_integers",
+      "description": "Municípios com linha na PAM em cada ano."
+    }
+  },
+  "required": [
+    "meta",
+    "series",
+    "measure",
+    "unit_pt",
+    "municipality_count",
+    "years",
+    "values",
+    "country_total",
+    "municipalities_with_data"
+  ],
+  "additionalProperties": false
+}

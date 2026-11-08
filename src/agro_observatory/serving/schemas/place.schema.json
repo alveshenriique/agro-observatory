@@ -1,0 +1,473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "places/…: Brasil, macrorregião, UF ou região imediata",
+  "description": "Ficha de um território: séries de produção por série publicada e, na UF e na região imediata, a associação clima × rendimento (só soja e café arábica, nunca por município). O arquivo da região imediata traz também todos os seus municípios, com séries e rankings, para a página Município. O site não calcula agregados territoriais além dos níveis que estes arquivos trazem.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "territory": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "enum": [
+            "country",
+            "macro_region",
+            "state",
+            "immediate_region"
+          ]
+        },
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "state_id": {
+          "type": "integer"
+        },
+        "state_abbreviation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "series": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/series"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/territory_block"
+      }
+    },
+    "climate": {
+      "type": "object",
+      "description": "Associação clima × rendimento do território por cultura (vazio onde não se aplica).",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/climate_crop"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "years": {
+            "type": "object",
+            "description": "Colunas por ano (colunar).",
+            "properties": {
+              "harvest_year": {
+                "$ref": "common.schema.json#/$defs/years"
+              },
+              "primary_window": {
+                "$ref": "common.schema.json#/$defs/strings"
+              },
+              "municipalities": {
+                "$ref": "common.schema.json#/$defs/integers"
+              },
+              "is_normal_available": {
+                "$ref": "common.schema.json#/$defs/booleans"
+              },
+              "is_trend_available": {
+                "$ref": "common.schema.json#/$defs/booleans"
+              },
+              "is_territory_standardized": {
+                "$ref": "common.schema.json#/$defs/booleans"
+              },
+              "water_balance_z": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "precipitation_pct_of_normal": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "hot_days_z": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "hot_days_anomaly_days": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "heat_degree_days_z": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "longest_dry_spell_z": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "frost_tmin_min_c": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "frost_area_share": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "is_water_deficit": {
+                "$ref": "common.schema.json#/$defs/nullable_booleans"
+              },
+              "is_heat_stress": {
+                "$ref": "common.schema.json#/$defs/nullable_booleans"
+              },
+              "is_frost": {
+                "$ref": "common.schema.json#/$defs/nullable_booleans"
+              },
+              "yield_kg_ha": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "trend_yield_kg_ha": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              },
+              "trend_method": {
+                "$ref": "common.schema.json#/$defs/nullable_strings"
+              },
+              "yield_anomaly": {
+                "$ref": "common.schema.json#/$defs/nullable_numbers"
+              }
+            },
+            "required": [
+              "harvest_year",
+              "primary_window",
+              "municipalities",
+              "is_normal_available",
+              "is_trend_available",
+              "is_territory_standardized",
+              "water_balance_z",
+              "precipitation_pct_of_normal",
+              "hot_days_z",
+              "hot_days_anomaly_days",
+              "heat_degree_days_z",
+              "longest_dry_spell_z",
+              "frost_tmin_min_c",
+              "frost_area_share",
+              "is_water_deficit",
+              "is_heat_stress",
+              "is_frost",
+              "yield_kg_ha",
+              "trend_yield_kg_ha",
+              "trend_method",
+              "yield_anomaly"
+            ],
+            "additionalProperties": false
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "trend_method": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "n_years": {
+                    "type": "integer"
+                  },
+                  "first_year": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "last_year": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "water_deficit_years": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "water_deficit_share": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Frequência de anos de seca (o risco de seca do território), fração."
+                  },
+                  "mean_anomaly_water_deficit_years": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "mean_anomaly_no_water_deficit_years": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "water_deficit_hit_rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "negative_anomaly_share_all_years": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "corr_water_balance_yield": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "heat_stress_years": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "mean_anomaly_heat_stress_years": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "heat_stress_hit_rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "frost_years": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "mean_anomaly_frost_years": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "frost_hit_rate": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "trend_method",
+                  "n_years",
+                  "first_year",
+                  "last_year",
+                  "water_deficit_years",
+                  "water_deficit_share",
+                  "mean_anomaly_water_deficit_years",
+                  "mean_anomaly_no_water_deficit_years",
+                  "water_deficit_hit_rate",
+                  "negative_anomaly_share_all_years",
+                  "corr_water_balance_yield",
+                  "heat_stress_years",
+                  "mean_anomaly_heat_stress_years",
+                  "heat_stress_hit_rate",
+                  "frost_years",
+                  "mean_anomaly_frost_years",
+                  "frost_hit_rate"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "years",
+          "summary"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "municipalities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "municipality_id": {
+            "type": "integer"
+          },
+          "municipality_name": {
+            "type": "string"
+          },
+          "series": {
+            "type": "object",
+            "propertyNames": {
+              "$ref": "common.schema.json#/$defs/series"
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/municipal_block"
+            }
+          }
+        },
+        "required": [
+          "municipality_id",
+          "municipality_name",
+          "series"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "meta",
+    "territory",
+    "series"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "territory": {
+            "properties": {
+              "level": {
+                "const": "immediate_region"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "climate",
+          "municipalities"
+        ]
+      },
+      "else": {
+        "properties": {
+          "municipalities": false
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "territory": {
+            "properties": {
+              "level": {
+                "enum": [
+                  "country",
+                  "macro_region"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "climate": false
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "territory": {
+            "properties": {
+              "level": {
+                "const": "state"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "climate"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "territory_block": {
+      "type": "object",
+      "properties": {
+        "years": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "harvested_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "planted_or_bearing_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "municipalities_with_data": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "producing_municipalities": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "real_value": {
+          "$ref": "common.schema.json#/$defs/real_value"
+        }
+      },
+      "required": [
+        "years",
+        "production_t",
+        "harvested_area_ha",
+        "planted_or_bearing_area_ha",
+        "municipalities_with_data",
+        "producing_municipalities",
+        "real_value"
+      ],
+      "additionalProperties": false,
+      "description": "Série de um território: somas dos municípios por ano. Arrays alinhados com years; null = nenhum município do território com dado no ano. O rendimento é production_t ÷ harvested_area_ha × 1000 (kg/ha)."
+    },
+    "municipal_block": {
+      "type": "object",
+      "properties": {
+        "years": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "harvested_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "planted_or_bearing_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_non_negative_integers"
+        },
+        "rank_immediate_region": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "rank_state": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "rank_country": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "real_value": {
+          "$ref": "common.schema.json#/$defs/real_value"
+        }
+      },
+      "required": [
+        "years",
+        "production_t",
+        "harvested_area_ha",
+        "planted_or_bearing_area_ha",
+        "rank_immediate_region",
+        "rank_state",
+        "rank_country",
+        "real_value"
+      ],
+      "additionalProperties": false,
+      "description": "Série de um município por ano. Rankings por produção entre os produtores (empates dividem a posição); null quando a produção é zero ou não há dado."
+    }
+  }
+}
