@@ -1,0 +1,236 @@
+version: 2
+
+# Camada de servir dados (fase 11): views que alimentam os arquivos estáticos do site. Leem só
+# marts, dimensões e, na validação, os seeds de referência externa. São views para não gastar
+# a cota de armazenamento do BigQuery; o exportador (`uv run export-serving`) lê cada uma uma
+# única vez. O contrato dos arquivos está em docs/CONTRATO_DE_DADOS.md.
+
+models:
+  - name: serve_series
+    description: >
+      Séries publicadas. Cada cultura é uma série, menos o café total, dividido na quebra de
+      unidade da PAM: `coffee_in_husk` (em coco, até 2001) e `coffee_processed` (beneficiado,
+      desde 2002). Nenhuma série, ranking, participação ou concentração da camada de servir
+      atravessa 2002. Traz os rótulos em português, a unidade da produção e o nome da área
+      (plantada ou em produção).
+    columns:
+      - name: series
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [soybean, corn, coffee_in_husk, coffee_processed, coffee_arabica, coffee_canephora]
+      - name: crop
+        description: Cultura do mart de origem (`coffee_total` nas duas metades do café).
+      - name: real_value_first_year
+        description: Primeiro ano com valor real (deflacionado), o maior entre o início da série e 1995.
+      - name: climate_crop
+        description: Cultura da análise de clima × rendimento (soja e café arábica); nulo nas demais.
+
+  - name: serve_municipalities
+    description: >
+      Índice de todos os municípios da malha atual, inclusive os 7 sem dado na PAM, na ordem
+      canônica dos arquivos publicados (código IBGE crescente).
+    columns:
+      - name: municipality_id
+        data_tests: [unique, not_null]
+      - name: state_abbreviation
+        data_tests: [not_null]
+      - name: immediate_region_id
+        data_tests: [not_null]
+
+  - name: serve_municipality_production
+    description: >
+      Produção por município × série publicada × ano, só onde a PAM tem linha: ausência é
+      "sem dado", zero é zero publicado pelo IBGE. Quantidades arredondadas a inteiros, valor
+      real em mil reais de 2025 (nulo antes de 1995) e rankings por produção entre os
+      produtores da região imediata, da UF e do Brasil (empates dividem a posição; nulo para
+      produção zero). O rendimento não é publicado aqui: o site calcula produção ÷ área colhida.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [municipality_id, series, year]
+    columns:
+      - name: municipality_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('serve_municipalities')
+                field: municipality_id
+      - name: series
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('serve_series')
+                field: series
+      - name: production_t
+        data_tests: [not_null]
+
+  - name: serve_territory_production
+    description: >
+      Produção do Brasil, das macrorregiões, das UFs e das regiões imediatas por série
+      publicada × ano: somas das linhas municipais. São os únicos agregados territoriais que o
+      site mostra; o rendimento sai deles como soma da produção ÷ soma da área colhida.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, series, year]
+    columns:
+      - name: territory_level
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [country, macro_region, state, immediate_region]
+      - name: municipalities_with_data
+        description: Municípios com linha na PAM no ano (os demais da região aparecem como sem dado).
+      - name: producing_municipalities
+        description: Municípios com produção maior que zero.
+
+  - name: serve_climate_territory_year
+    description: >
+      Associação clima × rendimento por ano, só por região imediata e UF (nunca por município),
+      só soja e café arábica (milho fora da análise climática). `yield_anomaly` é a
+      `yield_anomaly_pct` do mart, uma fração (−0,42 = 42% abaixo da tendência);
+      `precipitation_pct_of_normal` é um percentual (45 = 45% da chuva normal).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, crop, harvest_year]
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [immediate_region, state]
+      - name: crop
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [soybean, coffee_arabica]
+      - name: is_water_deficit
+        description: >
+          Seca na floração e enchimento: balanço hídrico com z ≤ −1 na janela crítica. É a
+          classe do achado principal e do risco de seca mostrado no site.
+
+  - name: serve_climate_territory_summary
+    description: >
+      Resumo da associação clima × rendimento por região imediata e UF. `water_deficit_share`
+      é a frequência de anos de seca na floração e enchimento na série (o risco de seca da
+      região); as anomalias e taxas são frações.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, crop]
+    columns:
+      - name: territory_level
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [immediate_region, state]
+      - name: crop
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [soybean, coffee_arabica]
+
+  - name: serve_analysis_headline
+    description: >
+      O achado principal numa linha: anomalia de rendimento da soja nos anos de seca na
+      floração e enchimento contra os demais, em todos os UF-anos com normal e tendência, e as
+      regiões imediatas com correlação positiva entre balanço hídrico e anomalia. Os mesmos
+      números do gráfico do README, que lê este modelo.
+
+  - name: serve_growth_decomposition
+    description: >
+      Decomposição do crescimento em área × rendimento com as séries publicadas (o café entra
+      como `coffee_processed`, com âncoras desde 2005).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series, territory_id, start_anchor, end_anchor]
+
+  - name: serve_concentration
+    description: >
+      Concentração da produção por série publicada e ano (municípios para 50% e 80%, HHI). O
+      café total também é cortado em 2002: a relação entre coco e beneficiado varia entre
+      regiões, e até as participações mudariam artificialmente na quebra.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series, year]
+
+  - name: serve_coffee_mg_biennial
+    description: Bienalidade do café arábica em Minas Gerais, com os nomes das séries publicadas.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [series, year]
+
+  - name: serve_soybean_frontier_shares
+    description: >
+      Fronteira da soja: participação de cada UF e macrorregião na produção nacional, por ano
+      (grade completa, com zero onde não houve produção).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, territory_id, year]
+
+  - name: serve_soybean_frontier_centroid
+    description: >
+      Fronteira da soja: centroide da produção por ano, a média das coordenadas do ponto
+      representativo de cada município produtor ponderada pela produção.
+    columns:
+      - name: year
+        data_tests: [unique, not_null]
+
+  - name: serve_soybean_frontier_thresholds
+    description: Primeiro ano em que cada UF alcançou (e sustentou) 1% e 5% da produção nacional de soja.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_id, threshold]
+
+  - name: serve_validation_sidra
+    description: >
+      Validação externa contra os agregados do próprio IBGE (SIDRA 5457, Brasil e UF), célula a
+      célula: `match` (igual até o arredondamento), `documented` (o total do IBGE difere da soma
+      das suas próprias linhas municipais, com o motivo) ou `mismatch`. Os testes
+      assert_production_matches_sidra_* falham com qualquer `mismatch` nos dados completos.
+    columns:
+      - name: status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [match, documented, mismatch]
+
+  - name: serve_validation_sidra_summary
+    description: Contagem das células da validação contra o IBGE por nível, variável e situação.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [territory_level, variable, status]
+
+  - name: serve_validation_sidra_discrepancies
+    description: As células da validação contra o IBGE que não são iguais, com o motivo, para a página Método.
+
+  - name: serve_validation_conab
+    description: >
+      Validação contra a Conab (levantamento de safra, outro método): soja por UF e ano-safra
+      desde 2010, com a diferença relativa da área plantada e da produção. `is_compared` marca
+      os UF-anos com ao menos 100 mil ha na Conab; `is_beyond_tolerance`, os que diferem mais de
+      10% (o teste assert_soybean_matches_conab avisa sobre eles).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [state_abbreviation, harvest_year]
+
+  - name: serve_parameters
+    description: >
+      Parâmetros do método por trás dos números publicados (ano-base da deflação, quebra do
+      café, período da normal e da tendência, limiares), das mesmas variáveis do dbt que os
+      modelos usam, para o catálogo e a página Método. Uma linha.

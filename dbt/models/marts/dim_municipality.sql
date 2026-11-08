@@ -7,6 +7,14 @@ first_pam_year as (
     from {{ ref('int_pam__crop_year') }}
     where has_data
     group by municipality_id
+),
+
+-- The representative point of the IBGE mesh polygon (always inside it, unlike the centroid),
+-- from the climate grid mapping. Used to place municipalities on a map without the mesh (for
+-- example, the production-weighted centroid of the soybean frontier).
+cells as (
+    select municipality_id, representative_lat, representative_lon
+    from {{ ref('stg_brdwgd__municipality_cells') }}
 )
 
 select
@@ -28,7 +36,11 @@ select
     localities.microregion_name,
     -- First year with any data for the tracked crops. A proxy for when municipalities
     -- created by splitting appear in the series; null when the PAM has no data at all.
-    first_pam_year.first_pam_year
+    first_pam_year.first_pam_year,
+    cells.representative_lat,
+    cells.representative_lon
 from localities
 left join first_pam_year
     on localities.municipality_id = first_pam_year.municipality_id
+left join cells
+    on localities.municipality_id = cells.municipality_id
