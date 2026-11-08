@@ -176,8 +176,9 @@ Quando as tabelas expiram, o manifesto expira junto, e a próxima carga recarreg
 | 2026-11-06 | `dbt build` completo | 369,3 MiB | 1.186,0 MiB | 9.054,0 MiB |
 | 2026-11-06 | Rebuild de 10 modelos (razões em ponto flutuante) | 163,8 MiB | 1.349,9 MiB | 8.890,1 MiB |
 | 2026-11-08 | `dim_municipality` com o ponto representativo e as 19 views da camada de servir | 1,0 MiB | 1.350,8 MiB | 8.889,2 MiB |
+| 2026-11-08 | View `serve_validation_sidra_scope` (escopo da validação contra o IBGE) | 0 MiB | 1.350,8 MiB | 8.889,2 MiB |
 
-Um ciclo completo (carga e build) grava cerca de 1.186 MiB, então a cota restante comporta cerca de 7 ciclos completos, ou cerca de 24 builds sem recarga da raw. As views da camada de servir não gravam nada; a exportação de 2026-11-08 só usou cota de consulta (440,6 MiB processados, 0,04% da cota mensal de 1 TiB, que se renova). A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
+Um ciclo completo (carga e build) grava cerca de 1.186 MiB, então a cota restante comporta cerca de 7 ciclos completos, ou cerca de 24 builds sem recarga da raw. As views da camada de servir não gravam nada; cada exportação só usa cota de consulta (cerca de 440 MiB processados, 0,04% da cota mensal de 1 TiB, que se renova). A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
 
 ## Camada de servir dados: arquivos estáticos para o site
 
