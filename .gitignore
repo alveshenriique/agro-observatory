@@ -33,3 +33,5 @@ dbt_packages/
 # OS
 .DS_Store
 Thumbs.db
+dist/
+ci-site-data/

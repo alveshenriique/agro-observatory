@@ -81,7 +81,9 @@ seeds:
       scripts/fetch_sidra_official_aggregates.py. Servem de referência externa: os testes
       assert_production_matches_sidra_* comparam as somas municipais do projeto com eles.
       `official_value` é nulo quando o IBGE publica "...", ".." ou "X"; `raw_value` guarda o
-      símbolo original.
+      símbolo original. A grade tem uma linha por território (Brasil e 27 UFs), cultura (5),
+      variável (4) e ano; só as células com valor publicado são comparadas (ver
+      serve_validation_sidra_scope).
     columns:
       - name: territory_level
         data_tests:

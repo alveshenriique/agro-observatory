@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "geo/*.topo.json",
+  "description": "Malha em TopoJSON (arcos compartilhados, coordenadas quantizadas em inteiros e codificadas em delta). Coordenadas em graus (SIRGAS 2000) via transform. Anéis externos no sentido horário e buracos no anti-horário (convenção do d3-geo). O id de cada geometria é o código IBGE do município (ou da UF em states.topo.json). Decodificar com topojson-client.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "Topology"
+    },
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "bbox": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "transform": {
+      "type": "object",
+      "properties": {
+        "scale": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "translate": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "scale",
+        "translate"
+      ],
+      "additionalProperties": false
+    },
+    "objects": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "GeometryCollection"
+          },
+          "geometries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "enum": [
+                    "Polygon",
+                    "MultiPolygon"
+                  ]
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "arcs": {
+                  "type": "array"
+                }
+              },
+              "required": [
+                "type",
+                "id",
+                "arcs"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "type",
+          "geometries"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "arcs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "minItems": 2
+      }
+    }
+  },
+  "required": [
+    "type",
+    "meta",
+    "bbox",
+    "transform",
+    "objects",
+    "arcs"
+  ],
+  "additionalProperties": false
+}

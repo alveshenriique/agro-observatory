@@ -6,3 +6,5 @@ date_utc,operation,detail,estimated_bytes,measured_bytes
 2026-11-06T21:43:59Z,load-raw,pam localities ipca brdwgd_municipality_cells climate_window_indicators,856408647,856439289
 2026-11-06T21:46:00Z,dbt build,all,390737507,387212187
 2026-11-06T21:58:19Z,dbt build,--select fct_crop_production int_bcb__ipca_annual int_yield__territory_trend agg_production_share_by_territory agg_territory_share_thresholds agg_production_concentration agg_production_growth_decomposition agg_coffee_mg_biennial agg_climate_yield_association agg_climate_yield_association_summary,172277421,171771085
+2026-11-08T13:24:52Z,dbt build,--select dim_municipality serve,1029359,1029359
+2026-11-08T14:12:46Z,dbt build,--select serve_validation_sidra_scope,0,0

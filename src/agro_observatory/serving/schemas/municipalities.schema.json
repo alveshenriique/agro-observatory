@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "municipalities.json",
+  "description": "Índice de todos os municípios (busca, nomes, região imediata de cada um), na ordem canônica: código IBGE crescente. As matrizes de explore/ e a malha seguem a mesma ordem.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "municipalities": {
+      "type": "object",
+      "properties": {
+        "municipality_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "municipality_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "state_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "state_abbreviation": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "immediate_region_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "first_pam_year": {
+          "$ref": "common.schema.json#/$defs/nullable_integers",
+          "description": "Primeiro ano com dado na PAM; null nos 7 municípios sem dado."
+        }
+      },
+      "required": [
+        "municipality_id",
+        "municipality_name",
+        "state_id",
+        "state_abbreviation",
+        "immediate_region_id",
+        "first_pam_year"
+      ],
+      "additionalProperties": false
+    },
+    "states": {
+      "type": "object",
+      "properties": {
+        "state_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "state_abbreviation": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "state_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "region_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        }
+      },
+      "required": [
+        "state_id",
+        "state_abbreviation",
+        "state_name",
+        "region_id"
+      ],
+      "additionalProperties": false
+    },
+    "immediate_regions": {
+      "type": "object",
+      "properties": {
+        "immediate_region_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "immediate_region_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "state_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "intermediate_region_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "intermediate_region_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        }
+      },
+      "required": [
+        "immediate_region_id",
+        "immediate_region_name",
+        "state_id",
+        "intermediate_region_id",
+        "intermediate_region_name"
+      ],
+      "additionalProperties": false
+    },
+    "macro_regions": {
+      "type": "object",
+      "properties": {
+        "region_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "region_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        }
+      },
+      "required": [
+        "region_id",
+        "region_name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "meta",
+    "municipalities",
+    "states",
+    "immediate_regions",
+    "macro_regions"
+  ],
+  "additionalProperties": false
+}

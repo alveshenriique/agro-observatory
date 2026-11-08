@@ -102,6 +102,13 @@ models:
         description: Código da microrregião (divisão de 1989); nulo em municípios criados depois dela.
       - name: microregion_name
         description: Nome da microrregião.
+      - name: representative_lat
+        description: >
+          Latitude (graus, SIRGAS 2000) do ponto representativo do polígono do município na malha
+          do IBGE, um ponto garantidamente dentro do polígono (o centroide pode cair fora). Nulo
+          se o município não está no mapeamento da grade climática.
+      - name: representative_lon
+        description: Longitude (graus, SIRGAS 2000) do ponto representativo do polígono do município.
 
   - name: fct_crop_production
     description: >

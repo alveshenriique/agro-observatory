@@ -25,11 +25,12 @@ Volumes com os dados completos (ingeridos em setembro de 2026), em linhas:
 
 ## Como ler
 
-As tabelas estão em três camadas, identificadas pelo prefixo:
+As tabelas estão em quatro camadas, identificadas pelo prefixo:
 
 - **`stg_` (staging)**: a camada raw tipada e renomeada, sem joins nem regras de negócio. Um modelo por fonte e entidade: `stg_ibge__pam`, `stg_ibge__localities`, `stg_bcb__ipca`, `stg_brdwgd__municipality_daily`, `stg_brdwgd__municipality_cells`.
 - **`int_` (intermediate)**: cálculos intermediários reutilizados pelos marts: o pivô da PAM por município × cultura × ano, o índice anual do IPCA, os indicadores climáticos por janela e as suas normais, e a tendência de rendimento por território.
-- **marts**: o modelo dimensional (`fct_crop_production`, `fct_crop_climate`, `dim_municipality`, `dim_crop`, `dim_year`) e os marts analíticos `agg_*`, que respondem às perguntas de negócio e são a fonte do dashboard.
+- **marts**: o modelo dimensional (`fct_crop_production`, `fct_crop_climate`, `dim_municipality`, `dim_crop`, `dim_year`) e os marts analíticos `agg_*`, que respondem às perguntas de negócio.
+- **`serve_` (camada de servir)**: views sobre os marts que alimentam os arquivos estáticos do site (séries publicadas, com o café cortado em 2002, agregados territoriais, rankings, associação clima × rendimento só por região imediata e UF, validação externa). O exportador `export-serving` lê cada uma uma vez; o contrato dos arquivos está em `docs/CONTRATO_DE_DADOS.md`.
 
 Os seeds (`crops`, calendários da Conab, eventos climáticos conhecidos, agregados oficiais do IBGE e série da Conab) são dados pequenos versionados no repositório.
 

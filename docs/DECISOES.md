@@ -15,6 +15,7 @@ Este documento registra as decisões técnicas do pipeline do Agro Observatory, 
 - [Identidade visual](#identidade-visual)
 - [BigQuery em produção: sandbox e arquitetura enxuta](#bigquery-em-produção-sandbox-e-arquitetura-enxuta)
 - [Operação do BigQuery: recarga e consumo de cota](#operação-do-bigquery-recarga-e-consumo-de-cota)
+- [Camada de servir dados: arquivos estáticos para o site](#camada-de-servir-dados-arquivos-estáticos-para-o-site)
 
 ## Stack do MVP
 
@@ -157,7 +158,12 @@ O que o projeto precisa foi testado na prática, num dataset descartável: load 
 4. Se o SQL mudou desde o último ciclo, validar antes sem gastar cota: `uv run bq-dbt build --empty --resource-type model seed`, seguido de `uv run bq-dbt test`. O `--empty` substitui as tabelas por versões vazias, então ele só vale quando o build real vem logo a seguir.
 5. Construir os modelos: `uv run bq-dbt build`, ou só os modelos afetados com `--select`, para economizar cota.
 6. Validar contra o Postgres: `uv run python scripts/compare_postgres_bigquery.py`.
-7. Atualizar a tabela abaixo a partir de `docs/bigquery_quota_log.csv`.
+7. Rodar todos os testes no BigQuery: `uv run bq-dbt test`. O resumo desta execução vai para o `method.json` do site, então ela precisa ser completa e a última antes da exportação.
+8. Exportar os arquivos do site: `uv run export-serving --target bigquery --dry-run` mostra os bytes que cada consulta vai processar (cota mensal de consulta, não de armazenamento), e `uv run export-serving --target bigquery` grava `dist/site-data/<versão>/`. Para conferir, exportar também do Postgres (`--target postgres --out dist/site-data-postgres`) e comparar com `uv run python scripts/compare_serving_bundles.py`.
+9. Empacotar: `uv run package-serving dist/site-data/<versão>` gera o pacote, as notas do release e o ponteiro `data-release.json`. O release `data-v<versão>` é criado à mão com o comando que ele imprime, depois de revisar, e o ponteiro vai para a `main` num PR.
+10. Atualizar a tabela abaixo a partir de `docs/bigquery_quota_log.csv`.
+
+Num Postgres, reconstruir uma tabela sozinha (`dbt build --select <tabela>`) apaga as views que dependem dela, porque o dbt-postgres troca a tabela e remove a anterior com `drop ... cascade`. Reconstruir junto os dependentes (`--select <tabela>+` ou o build completo). O BigQuery não tem esse problema: `create or replace table` mantém as views.
 
 Quando as tabelas expiram, o manifesto expira junto, e a próxima carga recarrega tudo: o procedimento é o mesmo, e custa um ciclo completo.
 
@@ -169,5 +175,70 @@ Quando as tabelas expiram, o manifesto expira junto, e a próxima carga recarreg
 | 2026-11-06 | Carga completa da raw | 816,8 MiB | 816,8 MiB | 9.423,2 MiB |
 | 2026-11-06 | `dbt build` completo | 369,3 MiB | 1.186,0 MiB | 9.054,0 MiB |
 | 2026-11-06 | Rebuild de 10 modelos (razões em ponto flutuante) | 163,8 MiB | 1.349,9 MiB | 8.890,1 MiB |
+| 2026-11-08 | `dim_municipality` com o ponto representativo e as 19 views da camada de servir | 1,0 MiB | 1.350,8 MiB | 8.889,2 MiB |
+| 2026-11-08 | View `serve_validation_sidra_scope` (escopo da validação contra o IBGE) | 0 MiB | 1.350,8 MiB | 8.889,2 MiB |
 
-Um ciclo completo (carga e build) grava cerca de 1.186 MiB, então a cota restante comporta cerca de 7 ciclos completos, ou cerca de 24 builds sem recarga da raw. A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
+Um ciclo completo (carga e build) grava cerca de 1.186 MiB, então a cota restante comporta cerca de 7 ciclos completos, ou cerca de 24 builds sem recarga da raw. As views da camada de servir não gravam nada; cada exportação só usa cota de consulta (cerca de 440 MiB processados, 0,04% da cota mensal de 1 TiB, que se renova). A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
+
+## Camada de servir dados: arquivos estáticos para o site
+
+**O que é.** O site não consulta o warehouse: ele lê arquivos JSON pequenos e pré-agregados e uma malha em TopoJSON, publicados numa CDN. Os arquivos saem de views `serve_*` (schema `serve`), que leem só marts, dimensões e, na validação, os seeds de referência externa. O comando `export-serving` lê cada view uma única vez, monta os arquivos, simplifica a malha, valida tudo contra os JSON Schemas e as regras de validade, concilia os arquivos com os marts por consultas independentes e só então grava a pasta da versão, com um manifesto. O contrato dos arquivos está em [CONTRATO_DE_DADOS.md](CONTRATO_DE_DADOS.md).
+
+**Views, não tabelas.** No BigQuery, uma view não ocupa a cota vitalícia de armazenamento; o custo passa para a consulta, no momento da exportação. O dry run das consultas da exportação, com a dimensão de municípios recalculada (um limite superior), deu cerca de 510 MiB processados, 0,05% da cota mensal de 1 TiB. Por isso o exportador lê cada view uma vez e reparte os arquivos em Python: uma consulta por município varreria as mesmas tabelas 5.571 vezes. As views expiram com o resto do sandbox, mas a exportação acontece logo depois do build, e o retrato que vale fica nos arquivos. Alternativa descartada: materializar como tabelas, o que gastaria cota a cada build sem ganho.
+
+**Arredondamento nas views.** Cada valor publicado é arredondado no dbt, com casas fixas por tipo: inteiros para toneladas, hectares, kg/ha e mil reais; 4 casas nas frações (participações, anomalias, taxas); 2 nos z-scores; 1 nos percentuais. A macro `round_to` passa o valor por NUMERIC antes de arredondar, para que os dois bancos arredondem o mesmo decimal (o Postgres não tem `round` de ponto flutuante com casas, e o `ROUND` do BigQuery arredondaria o valor binário). O exportador recusa qualquer número de ponto flutuante que chegue sem arredondar. Com isso, os arquivos gerados do Postgres e do BigQuery são iguais, e menores.
+
+**JSON em colunas, comprimido pela CDN.** As tabelas são objetos de arrays de mesmo tamanho, e as matrizes do mapa têm uma linha por município, na ordem do índice. Medido na matriz de produção da soja (5.571 municípios × 52 anos): 188 KiB com gzip em JSON por município, 221 KiB em JSON por ano e 345 KiB em Parquet com zstd, que ainda exigiria uma biblioteca de leitura no navegador. Arredondar a 3 algarismos significativos reduziria só 10% e perderia a exatidão. Alternativas descartadas: Parquet e Arrow (maiores aqui e com dependência no site), arredondamento para o mapa.
+
+**Divisão dos arquivos.**
+- **Base:** `catalog.json` (versão, séries, parâmetros, atribuição das fontes), o índice de municípios, `analysis.json` e `method.json`.
+- **Explorar:** 24 matrizes, uma por série e medida.
+- **Fichas territoriais:** Brasil, 5 macrorregiões, 27 UFs e 510 regiões imediatas. Cada arquivo de região imediata traz todos os seus municípios, com séries e rankings, o agregado da região e o risco de seca.
+
+Por que o pacote por região imediata:
+- comparado com um arquivo por município, são 510 arquivos em vez de 5.571, e os vizinhos da comparação chegam na mesma requisição;
+- um pacote por UF seria grande demais: o de Minas Gerais teria cerca de 500 KiB.
+
+Tamanhos medidos com gzip:
+- **Na abertura de cada página:** Análise 36 KiB, Explorar 481 KiB (malha nacional mais a produção da soja), Município 82 KiB na mediana e Método 10 KiB.
+- **Orçamento da página Município:** 100 KB. Ele é estourado nas regiões com mais de 40 municípios, com até 124 KiB. Se isso pesar na prática, a alavanca é separar um arquivo por município.
+- **Pacote inteiro:** 601 arquivos, 63 MiB sem compressão e 10 MiB com gzip.
+
+**A malha.** A malha municipal do IBGE em qualidade máxima tem 3 milhões de vértices e uma única inconsistência entre vizinhos: uma sobreposição de cerca de 1.200 m² entre Fortaleza e Caucaia. Ela fica com o município de menor código, e qualquer outro problema de cobertura interrompe a exportação.
+
+Os passos da simplificação:
+1. **Simplificação da cobertura:** `shapely.coverage_simplify`, Visvalingam–Whyatt aplicado uma vez a cada fronteira compartilhada, então os dois vizinhos recebem a mesma fronteira.
+2. **Snap rounding:** a cobertura inteira é arredondada para a grade inteira do TopoJSON de uma vez, com as faces reconstruídas e cada face atribuída ao município com que mais se sobrepõe. Arredondar vértice a vértice deixava 25 municípios inválidos na malha nacional, onde duas partes da mesma fronteira ficam a menos de uma célula. Consertar cada polígono com `make_valid` quebrava a fronteira com o vizinho.
+3. **Codificação:** um encoder de TopoJSON próprio guarda cada arco compartilhado uma vez e grava os anéis externos no sentido horário, como o d3-geo espera. Os testes decodificam a saída e conferem a cobertura, a contagem e os ids.
+
+Os níveis da malha:
+
+| Nível | Tolerância | Grade | gzip | Erro de área por município |
+|---|---|---|---|---|
+| Nacional | 0,025° | 10.000 | 290 KiB | mediana 1,4% |
+| Contorno das UFs | 0,04° | 10.000 | 13 KiB | — |
+| Uma malha por UF, para o zoom | 0,005° | 100.000 | 1,1 MiB no total, a maior de 151 KiB (MG) | mediana 0,1% |
+
+O erro de área da malha nacional chega a 18% no 1% de municípios mais distorcidos; são os minúsculos, que ocupam poucos pixels no mapa do Brasil. A tolerância de 0,02° custaria 19 KiB a mais e passaria do orçamento da página Explorar.
+
+Alternativas descartadas:
+- mapshaper, que traria o Node para o pipeline;
+- tiles vetoriais com MapLibre, exagero para 5.571 polígonos sem mapa de fundo;
+- GeoJSON, que tem o dobro do tamanho.
+
+**Café cortado em 2002 também nas participações e no HHI.** O corte das séries do café na quebra de unidade da PAM vale para toda a camada de servir, inclusive para medidas sem unidade, como participações e concentração. O motivo de substância: a relação entre o café em coco e o beneficiado varia entre regiões, conforme o tipo de café e o preparo, então até a participação de cada território mudaria artificialmente na quebra. Uma regra só, aplicada pela série publicada (`coffee_in_husk` até 2001, `coffee_processed` desde 2002), é também uma regra fácil de testar em todos os modelos e arquivos.
+
+**Uma lógica para os testes e para o site.** Os testes de validação externa contra o IBGE e a Conab passaram a ler as views `serve_validation_*`, as mesmas que alimentam a página Método. O que o site mostra como "validado" é exatamente o que os testes conferem. O gráfico do README também passou a ler `serve_analysis_headline`, e os números do achado têm uma fonte só.
+
+**Publicação: release do GitHub e um ponteiro no repositório.** O CI não tem acesso ao BigQuery, então os arquivos de produção saem do BigQuery no evento de publicação. O mesmo código exporta do Postgres, no desenvolvimento, no CI com a amostra e na comparação com o BigQuery.
+
+Como a versão chega ao site:
+1. O pacote de uma versão vai como asset de um release `data-vAAAA.MM.DD`: um `.tar.gz` reprodutível de cerca de 10 MiB, mais o manifesto.
+2. O repositório versiona só o ponteiro `data-release.json`, com a tag, a URL, o sha256 e as versões dos esquemas.
+3. O build do site baixa o pacote dessa versão, confere o sha256 e o publica em `/data/<versão>/`. Assim, cada commit do site reproduz exatamente os dados que usou.
+
+Alternativas descartadas:
+- **Versionar os arquivos no Git:** cerca de 63 MB sem compressão por versão, quase tudo reescrito a cada atualização da PAM, com diffs ilegíveis.
+- **Git LFS:** a cota grátis de banda, de 1 GiB por mês, acabaria com os downloads do CI.
+- **Gerar no deploy:** o CI não acessa o BigQuery, e no Postgres do CI só existe a amostra.
+

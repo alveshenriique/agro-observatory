@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "catalog.json",
+  "description": "Catálogo da versão dos dados: séries, medidas, parâmetros do método, rótulos das classes climáticas, atribuição de cada fonte (para o site exibir) e o padrão de caminho de cada arquivo. É o primeiro arquivo que o site lê.",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "warehouse": {
+      "enum": [
+        "bigquery",
+        "postgres"
+      ],
+      "description": "Banco de onde os arquivos foram gerados (bigquery na publicação)."
+    },
+    "sample": {
+      "type": "boolean",
+      "description": "Verdadeiro na amostra do CI, que nunca é publicada."
+    },
+    "municipality_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "null_means": {
+      "const": "sem dado"
+    },
+    "parameters": {
+      "$ref": "common.schema.json#/$defs/parameters"
+    },
+    "series": {
+      "type": "object",
+      "description": "Tabela colunar das séries publicadas, na ordem de exibição.",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/series"
+          }
+        },
+        "series_name_pt": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "production_unit_pt": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "area_name_pt": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "first_year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "last_year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "real_value_first_year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "climate_crop": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/climate_crop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "series",
+        "series_name_pt",
+        "production_unit_pt",
+        "area_name_pt",
+        "first_year",
+        "last_year",
+        "real_value_first_year",
+        "climate_crop"
+      ],
+      "additionalProperties": false
+    },
+    "measures": {
+      "type": "object",
+      "description": "Medidas dos mapas e das séries. O rendimento não é uma medida publicada: o site o calcula como produção ÷ área colhida (soma ÷ soma em qualquer agregado).",
+      "properties": {
+        "measure": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "production_t",
+              "harvested_area_ha",
+              "planted_or_bearing_area_ha",
+              "production_value_real_thousand_brl"
+            ]
+          }
+        },
+        "label_pt": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "unit_pt": {
+          "$ref": "common.schema.json#/$defs/strings"
+        }
+      },
+      "required": [
+        "measure",
+        "label_pt",
+        "unit_pt"
+      ],
+      "additionalProperties": false
+    },
+    "climate_labels": {
+      "type": "object",
+      "description": "Rótulo de cada classe climática por cultura, a partir da janela principal da cultura (soja: floração e enchimento; café arábica: enchimento dos grãos).",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/climate_crop"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "primary_window": {
+            "type": "string"
+          },
+          "is_water_deficit": {
+            "type": "string"
+          },
+          "is_heat_stress": {
+            "type": "string"
+          },
+          "is_frost": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "primary_window",
+          "is_water_deficit",
+          "is_heat_stress",
+          "is_frost"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "sources": {
+      "type": "object",
+      "description": "Atribuição de cada fonte, com o texto de citação que ela exige (attribution_pt).",
+      "propertyNames": {
+        "$ref": "common.schema.json#/$defs/source_key"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name_pt": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "attribution_pt": {
+            "type": "string",
+            "description": "Texto de citação a exibir no site."
+          },
+          "terms_pt": {
+            "type": "string"
+          },
+          "used_for_pt": {
+            "type": "string"
+          },
+          "reference_period_pt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name_pt",
+          "publisher",
+          "url",
+          "attribution_pt",
+          "terms_pt",
+          "used_for_pt",
+          "reference_period_pt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Padrão de caminho de cada tipo de arquivo, relativo à pasta da versão."
+    }
+  },
+  "required": [
+    "meta",
+    "project",
+    "warehouse",
+    "sample",
+    "municipality_count",
+    "null_means",
+    "parameters",
+    "series",
+    "measures",
+    "climate_labels",
+    "sources",
+    "files"
+  ],
+  "additionalProperties": false
+}

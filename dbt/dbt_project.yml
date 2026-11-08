@@ -64,6 +64,10 @@ models:
     marts:
       +materialized: table
       +schema: marts
+    # Serving layer for the website files: views, so they use no BigQuery storage quota.
+    serve:
+      +materialized: view
+      +schema: serve
 
 seeds:
   agro_observatory:

@@ -1,0 +1,716 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "analysis.json",
+  "description": "Dados da página Análise: o achado principal, a anomalia de rendimento por UF com as classes climáticas, a decomposição área × rendimento, a concentração, a bienalidade do café em MG e a fronteira da soja. Anomalias, participações e taxas são frações (−0,09 = 9% abaixo).",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "$ref": "common.schema.json#/$defs/meta"
+    },
+    "headline": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "description": "Achado principal (serve_analysis_headline), o mesmo do gráfico do README.",
+          "properties": {
+            "crop": {
+              "const": "soybean"
+            },
+            "state_years": {
+              "type": "integer"
+            },
+            "water_deficit_state_years": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "first_year": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "last_year": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "mean_anomaly_water_deficit_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "mean_anomaly_other_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "below_trend_share_water_deficit_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "below_trend_share_all_years": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "regions_with_positive_correlation": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "regions_with_correlation": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "crop",
+            "state_years",
+            "water_deficit_state_years",
+            "first_year",
+            "last_year",
+            "mean_anomaly_water_deficit_years",
+            "mean_anomaly_other_years",
+            "below_trend_share_water_deficit_years",
+            "below_trend_share_all_years",
+            "regions_with_positive_correlation",
+            "regions_with_correlation"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "climate_yield_by_state": {
+      "type": "object",
+      "description": "Associação clima × rendimento por UF e ano.",
+      "properties": {
+        "territory_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "territory_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "crop": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/climate_crop"
+          }
+        },
+        "harvest_year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "primary_window": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "municipalities": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "is_normal_available": {
+          "$ref": "common.schema.json#/$defs/booleans"
+        },
+        "is_trend_available": {
+          "$ref": "common.schema.json#/$defs/booleans"
+        },
+        "is_territory_standardized": {
+          "$ref": "common.schema.json#/$defs/booleans"
+        },
+        "water_balance_z": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "precipitation_pct_of_normal": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "hot_days_z": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "hot_days_anomaly_days": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "heat_degree_days_z": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "longest_dry_spell_z": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "frost_tmin_min_c": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "frost_area_share": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "is_water_deficit": {
+          "$ref": "common.schema.json#/$defs/nullable_booleans"
+        },
+        "is_heat_stress": {
+          "$ref": "common.schema.json#/$defs/nullable_booleans"
+        },
+        "is_frost": {
+          "$ref": "common.schema.json#/$defs/nullable_booleans"
+        },
+        "yield_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "trend_yield_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "trend_method": {
+          "$ref": "common.schema.json#/$defs/nullable_strings"
+        },
+        "yield_anomaly": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        }
+      },
+      "required": [
+        "territory_id",
+        "territory_name",
+        "crop",
+        "harvest_year",
+        "primary_window",
+        "municipalities",
+        "is_normal_available",
+        "is_trend_available",
+        "is_territory_standardized",
+        "water_balance_z",
+        "precipitation_pct_of_normal",
+        "hot_days_z",
+        "hot_days_anomaly_days",
+        "heat_degree_days_z",
+        "longest_dry_spell_z",
+        "frost_tmin_min_c",
+        "frost_area_share",
+        "is_water_deficit",
+        "is_heat_stress",
+        "is_frost",
+        "yield_kg_ha",
+        "trend_yield_kg_ha",
+        "trend_method",
+        "yield_anomaly"
+      ],
+      "additionalProperties": false
+    },
+    "climate_summary_by_state": {
+      "type": "object",
+      "description": "Resumo da associação por UF.",
+      "properties": {
+        "territory_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "territory_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "crop": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/climate_crop"
+          }
+        },
+        "trend_method": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "n_years": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "first_year": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "last_year": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "water_deficit_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "water_deficit_share": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Frequência de anos de seca (o risco de seca do território), fração."
+          }
+        },
+        "mean_anomaly_water_deficit_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "mean_anomaly_no_water_deficit_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "water_deficit_hit_rate": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "negative_anomaly_share_all_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "corr_water_balance_yield": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "heat_stress_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "mean_anomaly_heat_stress_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "heat_stress_hit_rate": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "frost_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "mean_anomaly_frost_years": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "frost_hit_rate": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      },
+      "required": [
+        "territory_id",
+        "territory_name",
+        "crop",
+        "trend_method",
+        "n_years",
+        "first_year",
+        "last_year",
+        "water_deficit_years",
+        "water_deficit_share",
+        "mean_anomaly_water_deficit_years",
+        "mean_anomaly_no_water_deficit_years",
+        "water_deficit_hit_rate",
+        "negative_anomaly_share_all_years",
+        "corr_water_balance_yield",
+        "heat_stress_years",
+        "mean_anomaly_heat_stress_years",
+        "heat_stress_hit_rate",
+        "frost_years",
+        "mean_anomaly_frost_years",
+        "frost_hit_rate"
+      ],
+      "additionalProperties": false
+    },
+    "growth_decomposition": {
+      "type": "object",
+      "description": "Decomposição log do crescimento em área e rendimento (o café começa em 2005, depois da quebra).",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/series"
+          }
+        },
+        "territory_level": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "territory_id": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "territory_name": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "start_anchor": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "end_anchor": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "start_period": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "end_period": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "start_production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "end_production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "start_harvested_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "end_harvested_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "start_yield_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "end_yield_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "start_share_of_national_production": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "is_low_base": {
+          "$ref": "common.schema.json#/$defs/nullable_booleans"
+        },
+        "ln_production_growth": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "ln_area_effect": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "ln_yield_effect": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "area_share_of_growth": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "yield_share_of_growth": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        }
+      },
+      "required": [
+        "series",
+        "territory_level",
+        "territory_id",
+        "territory_name",
+        "start_anchor",
+        "end_anchor",
+        "start_period",
+        "end_period",
+        "start_production_t",
+        "end_production_t",
+        "start_harvested_area_ha",
+        "end_harvested_area_ha",
+        "start_yield_kg_ha",
+        "end_yield_kg_ha",
+        "start_share_of_national_production",
+        "is_low_base",
+        "ln_production_growth",
+        "ln_area_effect",
+        "ln_yield_effect",
+        "area_share_of_growth",
+        "yield_share_of_growth"
+      ],
+      "additionalProperties": false
+    },
+    "concentration": {
+      "type": "object",
+      "description": "Concentração da produção por série e ano (o café total é cortado em 2002).",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/series"
+          }
+        },
+        "year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "producing_municipalities": {
+          "$ref": "common.schema.json#/$defs/integers"
+        },
+        "national_production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "municipalities_for_50pct": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "municipalities_for_80pct": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "share_of_producers_for_50pct": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "hhi": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        }
+      },
+      "required": [
+        "series",
+        "year",
+        "producing_municipalities",
+        "national_production_t",
+        "municipalities_for_50pct",
+        "municipalities_for_80pct",
+        "share_of_producers_for_50pct",
+        "hhi"
+      ],
+      "additionalProperties": false
+    },
+    "coffee_mg_biennial": {
+      "type": "object",
+      "description": "Bienalidade do café em Minas Gerais.",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/series"
+          }
+        },
+        "year": {
+          "$ref": "common.schema.json#/$defs/years"
+        },
+        "production_unit": {
+          "$ref": "common.schema.json#/$defs/strings"
+        },
+        "production_t": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "harvested_area_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "yield_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "production_change_vs_previous_year": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "production_centered_trend_t": {
+          "$ref": "common.schema.json#/$defs/nullable_integers"
+        },
+        "production_ratio_to_trend": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "yield_centered_trend_kg_ha": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "yield_ratio_to_trend": {
+          "$ref": "common.schema.json#/$defs/nullable_numbers"
+        },
+        "cycle_phase": {
+          "$ref": "common.schema.json#/$defs/nullable_strings"
+        },
+        "yield_cycle_phase": {
+          "$ref": "common.schema.json#/$defs/nullable_strings"
+        }
+      },
+      "required": [
+        "series",
+        "year",
+        "production_unit",
+        "production_t",
+        "harvested_area_ha",
+        "yield_kg_ha",
+        "production_change_vs_previous_year",
+        "production_centered_trend_t",
+        "production_ratio_to_trend",
+        "yield_centered_trend_kg_ha",
+        "yield_ratio_to_trend",
+        "cycle_phase",
+        "yield_cycle_phase"
+      ],
+      "additionalProperties": false
+    },
+    "soybean_frontier": {
+      "type": "object",
+      "properties": {
+        "shares": {
+          "type": "object",
+          "description": "Participação de UFs e macrorregiões na produção nacional de soja.",
+          "properties": {
+            "territory_level": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "territory_id": {
+              "$ref": "common.schema.json#/$defs/integers"
+            },
+            "territory_name": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "year": {
+              "$ref": "common.schema.json#/$defs/years"
+            },
+            "production_t": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "share_of_national_production": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            }
+          },
+          "required": [
+            "territory_level",
+            "territory_id",
+            "territory_name",
+            "year",
+            "production_t",
+            "share_of_national_production"
+          ],
+          "additionalProperties": false
+        },
+        "centroid": {
+          "type": "object",
+          "description": "Centroide da produção de soja por ano (graus, SIRGAS 2000).",
+          "properties": {
+            "year": {
+              "$ref": "common.schema.json#/$defs/years"
+            },
+            "centroid_lat": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "centroid_lon": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            },
+            "production_t": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "producing_municipalities": {
+              "$ref": "common.schema.json#/$defs/integers"
+            }
+          },
+          "required": [
+            "year",
+            "centroid_lat",
+            "centroid_lon",
+            "production_t",
+            "producing_municipalities"
+          ],
+          "additionalProperties": false
+        },
+        "thresholds": {
+          "type": "object",
+          "description": "Primeiro ano em que cada UF alcançou e sustentou 1% e 5% da produção.",
+          "properties": {
+            "territory_id": {
+              "$ref": "common.schema.json#/$defs/integers"
+            },
+            "territory_name": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "threshold": {
+              "$ref": "common.schema.json#/$defs/numbers"
+            },
+            "first_year_reached": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "first_year_sustained": {
+              "$ref": "common.schema.json#/$defs/nullable_integers"
+            },
+            "max_share": {
+              "$ref": "common.schema.json#/$defs/nullable_numbers"
+            }
+          },
+          "required": [
+            "territory_id",
+            "territory_name",
+            "threshold",
+            "first_year_reached",
+            "first_year_sustained",
+            "max_share"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "shares",
+        "centroid",
+        "thresholds"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "meta",
+    "headline",
+    "climate_yield_by_state",
+    "climate_summary_by_state",
+    "growth_decomposition",
+    "concentration",
+    "coffee_mg_biennial",
+    "soybean_frontier"
+  ],
+  "additionalProperties": false
+}
