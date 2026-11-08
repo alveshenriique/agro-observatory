@@ -5,14 +5,17 @@ same layout and schema, so CI can run the real loader and the full dbt build on 
 - PAM: every crop and year, only for the municipalities in SAMPLE_MUNICIPALITIES;
 - localities and IPCA: complete (they are small);
 - climate (BR-DWGD by municipality): SAMPLE_CLIMATE_YEARS for the same municipalities, and
-  their rows of the cell mapping.
+  their rows of the cell mapping;
+- mesh (IBGE, maximum quality): the polygons of the same municipalities, unchanged, for the
+  serving layer's mesh export (`export-serving --sample`).
 
-Usage: uv run python scripts/make_ci_sample.py [--parts pam snapshots climate]
+Usage: uv run python scripts/make_ci_sample.py [--parts pam snapshots climate mesh]
 Regenerating a part rewrites its files even if only `_ingested_at` changed, so regenerate
 only the parts whose source actually changed.
 """
 
 import argparse
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -39,7 +42,7 @@ SAMPLE_MUNICIPALITIES = {
 # Consecutive years, so crop windows that cross the turn of the year can be built.
 SAMPLE_CLIMATE_YEARS = (2023, 2024, 2025)
 
-PARTS = ("pam", "snapshots", "climate")
+PARTS = ("pam", "snapshots", "climate", "mesh")
 
 
 def sample_filter(table: pa.Table, column: str, as_int: bool = False) -> pa.Table:
@@ -83,12 +86,27 @@ def make_climate() -> str:
     return f"climate: {len(SAMPLE_CLIMATE_YEARS)} years, {rows} daily rows"
 
 
+def make_mesh() -> str:
+    relative = "ibge_mesh/municipalities.geojson"
+    data = json.loads((SOURCE_DIR / relative).read_text(encoding="utf-8"))
+    features = [f for f in data["features"] if f["properties"]["codarea"] in SAMPLE_MUNICIPALITIES]
+    target = OUTPUT_DIR / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps({**data, "features": features}), encoding="utf-8")
+    return f"mesh: {len(features)} municipalities"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the CI raw data sample.")
     parser.add_argument("--parts", nargs="+", choices=PARTS, default=list(PARTS))
     args = parser.parse_args(argv)
 
-    builders = {"pam": make_pam, "snapshots": make_snapshots, "climate": make_climate}
+    builders = {
+        "pam": make_pam,
+        "snapshots": make_snapshots,
+        "climate": make_climate,
+        "mesh": make_mesh,
+    }
     try:
         for part in args.parts:
             print(builders[part]())

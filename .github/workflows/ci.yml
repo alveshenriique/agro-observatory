@@ -77,6 +77,14 @@ jobs:
         working-directory: dbt
         run: uv run dbt build
 
+      # Serving layer: export the website files from the sample with the production code,
+      # validate them against the JSON Schemas and the validity rules, and reconcile them with
+      # the marts. The sample bundle (7 municipalities, partial mesh) is never published.
+      - name: Export the website data files (sample)
+        run: >-
+          uv run export-serving --target postgres --sample
+          --mesh tests/fixtures/raw/ibge_mesh/municipalities.geojson --out ci-site-data
+
       # The BigQuery production target has no daily climate: it reads the window indicators
       # computed here from a derived source. Test that path on Postgres with the same models
       # and tests: export the indicators, load them as the derived source, rebuild in that mode.
