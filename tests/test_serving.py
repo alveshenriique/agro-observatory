@@ -2,6 +2,7 @@
 
 import json
 from decimal import Decimal
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -519,6 +520,10 @@ def tables() -> dict[str, Table]:
         ["territory_level", "variable", "status", "cells", "first_year", "last_year"],
         [("country", "production_t", "match", 24, 2000, 2003)],
     )
+    t["serve_validation_sidra_scope"] = Table(
+        ["category", "sort_order", "description_pt", "cells"],
+        [("compared", 1, "valor publicado", 24), ("coffee_breakdown_before_2012", 2, "café", 8)],
+    )
     t["serve_validation_sidra_discrepancies"] = Table(
         [
             "territory_level",
@@ -602,6 +607,30 @@ def test_rules_reject_the_raw_coffee_total() -> None:
     files = bundle_files()
     files["analysis.json"]["coffee_mg_biennial"]["production_unit"] = ["coffee_total"]
     assert any("coffee_total" in e for e in contract.check_rules(files))
+
+
+def test_method_publishes_the_compared_cell_count_with_its_definition() -> None:
+    validation = bundle_files()["method.json"]["validation"]
+    assert validation["sidra_definition_pt"] == build.SIDRA_COMPARED_CELL_DEFINITION_PT
+    scope = validation["sidra_scope"]
+    assert dict(zip(scope["category"], scope["cells"], strict=True)) == {
+        "compared": 24,
+        "coffee_breakdown_before_2012": 8,
+    }
+
+
+def test_rules_reject_a_summary_that_disagrees_with_the_scope() -> None:
+    files = bundle_files()
+    files["method.json"]["validation"]["sidra_scope"]["cells"][0] = 25
+    assert any(
+        "compared cells" in e for e in contract.check_file("method.json", files["method.json"])
+    )
+
+
+@pytest.mark.parametrize("doc", ["docs/VALIDACAO.md", "docs/CONTRATO_DE_DADOS.md"])
+def test_docs_repeat_the_compared_cell_definition_verbatim(doc) -> None:
+    root = Path(__file__).resolve().parents[1]
+    assert build.SIDRA_COMPARED_CELL_DEFINITION_PT in (root / doc).read_text(encoding="utf-8")
 
 
 def test_columnar_tables_must_have_equal_lengths() -> None:

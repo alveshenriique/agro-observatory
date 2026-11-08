@@ -142,20 +142,32 @@ def notes(folder: Path, manifest: dict, version: str, asset: str, digest: str, s
         ]
     if method_path.exists():
         method = json.loads(method_path.read_text())
-        sidra = method["validation"]["sidra_summary"]
+        validation = method["validation"]
         cells = dict.fromkeys(("match", "documented", "mismatch"), 0)
-        for status, n in zip(sidra["status"], sidra["cells"], strict=True):
+        for status, n in zip(
+            validation["sidra_summary"]["status"], validation["sidra_summary"]["cells"], strict=True
+        ):
             cells[status] += n
-        conab = method["validation"]["conab"]
+        scope = dict(
+            zip(
+                validation["sidra_scope"]["category"],
+                validation["sidra_scope"]["cells"],
+                strict=True,
+            )
+        )
+        grid = sum(scope.values())
+        conab = validation["conab"]
         compared = sum(bool(v) for v in conab["is_compared"])
         beyond = sum(bool(v) for v in conab["is_beyond_tolerance"])
         lines += [
             "",
             "**Validação.**",
-            f"- IBGE (agregados Brasil e UF da tabela 5457): {number(sum(cells.values()), 0)} "
+            f"- IBGE (agregados Brasil e UF da tabela 5457): {number(scope['compared'], 0)} "
             f"células comparadas, {number(cells['match'], 0)} iguais, {cells['documented']} "
             f"diferenças da própria fonte documentadas com o motivo e {cells['mismatch']} "
-            "divergências.",
+            f"divergências. A grade baixada tem {number(grid, 0)} combinações, das quais "
+            f"{number(grid - scope['compared'], 0)} não têm valor publicado. "
+            f"{validation['sidra_definition_pt']}",
             f"- Conab (soja por UF, desde 2010, outro método): {compared} UF-anos comparados, "
             f"{beyond} com diferença acima de 10% (aviso).",
         ]

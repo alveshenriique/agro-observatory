@@ -209,11 +209,30 @@ models:
                 values: [match, documented, mismatch]
 
   - name: serve_validation_sidra_summary
-    description: Contagem das células da validação contra o IBGE por nível, variável e situação.
+    description: >
+      Contagem das células comparadas com o IBGE por nível, variável e situação. A soma é o
+      número de células comparadas, o mesmo citado na VALIDACAO.md, no contrato dos dados e no
+      site, sempre com a definição de `method.json` (`validation.sidra_definition_pt`).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [territory_level, variable, status]
+
+  - name: serve_validation_sidra_scope
+    description: >
+      O escopo da validação contra o IBGE: a grade baixada do SIDRA (Brasil e 27 UFs × 5
+      culturas × 4 variáveis × todos os anos) dividida entre as células comparadas, em que o
+      IBGE publica valor, e as combinações sem valor publicado ("..."), por motivo: arábica e
+      canéfora antes de 2012, área plantada antes de 1988 e UFs em anos sem valor. Uma linha
+      por categoria.
+    columns:
+      - name: category
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [compared, coffee_breakdown_before_2012, planted_area_before_1988, state_year_without_value]
 
   - name: serve_validation_sidra_discrepancies
     description: As células da validação contra o IBGE que não são iguais, com o motivo, para a página Método.

@@ -15,7 +15,7 @@
       "properties": {
         "sidra_summary": {
           "type": "object",
-          "description": "Células comparadas com os agregados do IBGE por nível, variável e situação.",
+          "description": "Células comparadas com os agregados do IBGE por nível, variável e situação. A soma de cells é o número de células comparadas, definido em sidra_definition_pt.",
           "properties": {
             "territory_level": {
               "$ref": "common.schema.json#/$defs/strings"
@@ -119,6 +119,43 @@
           ],
           "additionalProperties": false
         },
+        "sidra_scope": {
+          "type": "object",
+          "description": "Escopo da validação contra o IBGE: a grade baixada do SIDRA (Brasil e 27 UFs × culturas × variáveis × anos) dividida entre as células comparadas e as combinações sem valor publicado, por motivo. A soma de cells é o tamanho da grade; a categoria compared é o número de células comparadas.",
+          "properties": {
+            "category": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "compared",
+                  "coffee_breakdown_before_2012",
+                  "planted_area_before_1988",
+                  "state_year_without_value"
+                ]
+              }
+            },
+            "sort_order": {
+              "$ref": "common.schema.json#/$defs/integers"
+            },
+            "description_pt": {
+              "$ref": "common.schema.json#/$defs/strings"
+            },
+            "cells": {
+              "$ref": "common.schema.json#/$defs/integers"
+            }
+          },
+          "required": [
+            "category",
+            "sort_order",
+            "description_pt",
+            "cells"
+          ],
+          "additionalProperties": false
+        },
+        "sidra_definition_pt": {
+          "type": "string",
+          "description": "A definição de célula comparada, para exibir ao lado do número em qualquer lugar que o cite."
+        },
         "conab": {
           "type": "object",
           "description": "Soja por UF e ano-safra: PAM × Conab.",
@@ -172,6 +209,8 @@
       "required": [
         "sidra_summary",
         "sidra_discrepancies",
+        "sidra_scope",
+        "sidra_definition_pt",
         "conab"
       ],
       "additionalProperties": false

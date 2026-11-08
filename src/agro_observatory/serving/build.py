@@ -44,6 +44,7 @@ VIEWS = (
     "serve_soybean_frontier_thresholds",
     "serve_validation_sidra_summary",
     "serve_validation_sidra_discrepancies",
+    "serve_validation_sidra_scope",
     "serve_validation_conab",
 )
 
@@ -79,6 +80,20 @@ FILE_PATTERNS = {
     "geo_state": "geo/state/{abbreviation}.topo.json",
     "manifest": "manifest.json",
 }
+
+
+# The one definition of the count of the IBGE validation, published in method.json (the site
+# and the release notes read it there) and repeated verbatim in docs/VALIDACAO.md and
+# docs/CONTRATO_DE_DADOS.md (tests/test_serving.py checks it). No numbers in it: the counts
+# come from serve_validation_sidra_scope and change when the data does.
+SIDRA_COMPARED_CELL_DEFINITION_PT = (
+    "Célula comparada: um valor que o IBGE publica para o Brasil ou para uma UF na tabela 5457 "
+    "do SIDRA, para uma cultura (soja, milho, café total, café arábica ou café canéfora), um ano "
+    "e uma variável (produção, área colhida, área plantada ou rendimento), confrontado com a "
+    'soma dos municípios do projeto. As combinações sem valor publicado ("...") não entram: '
+    "arábica e canéfora antes de 2012, área plantada antes de 1988 e UFs em anos sem valor "
+    "publicado."
+)
 
 
 class UnroundedValueError(TypeError):
@@ -536,6 +551,8 @@ class Bundle:
                     "serve_validation_sidra_discrepancies",
                     ["territory_level", "territory_id", "year", "series", "variable"],
                 ),
+                "sidra_scope": table("serve_validation_sidra_scope", ["sort_order"]),
+                "sidra_definition_pt": SIDRA_COMPARED_CELL_DEFINITION_PT,
                 "conab": table("serve_validation_conab", ["state_abbreviation", "harvest_year"]),
             },
             "dbt_tests": dbt_tests,

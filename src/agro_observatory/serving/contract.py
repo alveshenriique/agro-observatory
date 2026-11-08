@@ -136,8 +136,22 @@ def check_file(path: str, payload: dict) -> list[str]:
             for name, table in tables:
                 _equal_lengths(table, f"{path}:{name}", errors)
     elif schema == "method":
-        for name, table in payload["validation"].items():
-            _equal_lengths(table, f"{path}:validation.{name}", errors)
+        validation = payload["validation"]
+        for name, table in validation.items():
+            if isinstance(table, dict):
+                _equal_lengths(table, f"{path}:validation.{name}", errors)
+        scope = dict(
+            zip(
+                validation["sidra_scope"]["category"],
+                validation["sidra_scope"]["cells"],
+                strict=True,
+            )
+        )
+        if sum(validation["sidra_summary"]["cells"]) != scope.get("compared", 0):
+            errors.append(
+                f"{path}: the summary counts {sum(validation['sidra_summary']['cells'])} compared "
+                f"cells, the scope {scope.get('compared', 0)}"
+            )
     return [f"{path}: {e}" if not e.startswith(path) else e for e in errors]
 
 
