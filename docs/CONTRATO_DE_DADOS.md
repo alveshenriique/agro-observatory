@@ -77,7 +77,7 @@ Todo arquivo começa com um bloco `meta`:
 
 ## Arquivos
 
-Os tamanhos com gzip abaixo são os da versão gerada em 2026-11-07, com os dados completos.
+Os tamanhos com gzip abaixo são os da versão 2026.11.08, com os dados completos.
 
 | Caminho | Esquema | Página | Quando carrega | gzip |
 |---|---|---|---|---|
@@ -133,10 +133,16 @@ Não há rendimento: o mapa de rendimento usa as matrizes de produção e de ár
 
 **`method.json`.** Traz:
 - `parameters`;
-- `validation.sidra_summary`: células comparadas com os agregados do IBGE, por nível, variável e situação;
+- `validation.sidra_summary`: células comparadas com os agregados do IBGE, por nível, variável e situação; a soma é o número de células comparadas;
 - `validation.sidra_discrepancies`: as células documentadas, com o motivo;
+- `validation.sidra_scope`: a grade baixada do SIDRA dividida entre as células comparadas (`compared`) e as combinações sem valor publicado, por motivo (`coffee_breakdown_before_2012`, `planted_area_before_1988`, `state_year_without_value`), com uma descrição em português;
+- `validation.sidra_definition_pt`: a definição de célula comparada. O site a exibe ao lado do número, sempre que citá-lo;
 - `validation.conab`: a soja por UF e ano-safra, PAM contra Conab;
 - `dbt_tests`: o resumo dos testes do build publicado.
+
+Na versão 2026.11.08, são 19.237 células comparadas, de uma grade de 29.120 combinações, das quais 9.883 não têm valor publicado. A definição publicada, a mesma da [VALIDACAO.md](VALIDACAO.md#validação-externa):
+
+> Célula comparada: um valor que o IBGE publica para o Brasil ou para uma UF na tabela 5457 do SIDRA, para uma cultura (soja, milho, café total, café arábica ou café canéfora), um ano e uma variável (produção, área colhida, área plantada ou rendimento), confrontado com a soma dos municípios do projeto. As combinações sem valor publicado ("...") não entram: arábica e canéfora antes de 2012, área plantada antes de 1988 e UFs em anos sem valor publicado.
 
 **`geo/*.topo.json`.** TopoJSON padrão, para decodificar com `topojson-client`:
 - **Coordenadas:** em graus (SIRGAS 2000), quantizadas, com `transform`.
