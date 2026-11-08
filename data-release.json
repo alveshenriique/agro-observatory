@@ -3,9 +3,9 @@
   "release_tag": "data-v2026.11.08",
   "asset": "site-data-2026.11.08.tar.gz",
   "asset_url": "https://github.com/alveshenriique/agro-observatory/releases/download/data-v2026.11.08/site-data-2026.11.08.tar.gz",
-  "sha256": "05435b76717b1fa9479c0bd22f99dc41e7056fd5cd39f37a1982eae4d55557e4",
-  "bytes": 10402731,
-  "manifest_sha256": "c324aa10081806bf1ef9cd02e60a5f5ba5c24dbbaf26028be3d50ee54b141957",
+  "sha256": "933b46aa621ffc903cd0af628d07ea121299e6f0400efef7460178a6c1654c6c",
+  "bytes": 10403148,
+  "manifest_sha256": "255c65b0c6a76c162faf660a8ec5e75ed087791125b42cec284b0de862b77cd3",
   "schema_versions": [
     "analysis/1",
     "catalog/1",
@@ -15,7 +15,7 @@
     "place/1",
     "topology/1"
   ],
-  "generated_at": "2026-11-08T13:40:50Z",
+  "generated_at": "2026-11-08T14:15:52Z",
   "warehouse": "bigquery",
-  "commit": "cf41e19215cce7c147a1b88963e7a1520ab9c23f"
+  "commit": "7e890c8ad93fe1560777d13b79e99fe98169f7a8"
 }
