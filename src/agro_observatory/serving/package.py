@@ -72,24 +72,109 @@ def tarball(folder: Path, target: Path) -> None:
     target.write_bytes(gzip.compress(buffer.getvalue(), 9, mtime=0))
 
 
-def notes(manifest: dict, version: str, asset: str, digest: str, size: int) -> str:
+CHECKS_PT = {
+    "explore matrices equal the fact table": (
+        "Matrizes do Explorar iguais ao fato de produção: somas, contagens, zeros e nulos por "
+        "série, medida e ano."
+    ),
+    "territorial files add up": (
+        "Fichas territoriais consistentes: Brasil igual ao fato; UFs, macrorregiões e regiões "
+        "imediatas somam o Brasil; cada região imediata soma os seus municípios."
+    ),
+    "main finding matches the association mart": (
+        "Achado principal igual ao recalculado a partir do mart de associação clima × rendimento."
+    ),
+    "climate rows equal the association mart": (
+        "Linhas de clima das fichas de UF e de região imediata iguais às do mart de associação."
+    ),
+    "mesh decodes to a valid coverage of the index": (
+        "Malha decodificada como cobertura válida, com exatamente os municípios do índice; as "
+        "malhas por UF particionam a nacional."
+    ),
+}
+WAREHOUSES = {"bigquery": "BigQuery", "postgres": "PostgreSQL"}
+
+
+def number(value: float, digits: int = 1) -> str:
+    """Portuguese formatting: 1.234,5."""
+    text = f"{value:,.{digits}f}"
+    return text.replace(",", "\0").replace(".", ",").replace("\0", ".")
+
+
+def percent(fraction: float, signed: bool = False) -> str:
+    text = number(100 * fraction) + "%"
+    return ("+" + text if fraction > 0 else text.replace("-", "−")) if signed else text
+
+
+def notes(folder: Path, manifest: dict, version: str, asset: str, digest: str, size: int) -> str:
     files = manifest["files"]
     total = sum(f["bytes"] for f in files)
     total_gz = sum(f["gzip_bytes"] for f in files)
-    checks = "\n".join(f"- {c['name']}: {c['detail']}" for c in manifest["checks"])
-    return f"""Pacote de dados do site, versão {version}.
-
-Gerado em {manifest["meta"]["generated_at"]} a partir do {manifest["warehouse"]} \
-(commit {manifest["git"]["commit"]}), com {len(files) + 1} arquivos: {total / 2**20:.1f} MiB \
-sem compressão, {total_gz / 2**20:.1f} MiB com gzip. O contrato dos arquivos está em \
-docs/CONTRATO_DE_DADOS.md; cada arquivo tem esquema, versão dos dados, data de geração e fontes.
-
-Checagens de conciliação com os marts:
-{checks}
-
-Arquivo: `{asset}` ({size / 2**20:.1f} MiB), sha256 `{digest}`. O ponteiro `data-release.json` \
-no repositório fixa esta versão para o build do site.
-"""
+    commit = (manifest["git"]["commit"] or "desconhecido")[:7]
+    when = manifest["meta"]["generated_at"].replace("T", " às ").replace("Z", " UTC")
+    lines = [
+        f"Pacote de dados do site, versão {version}.",
+        "",
+        f"Gerado em {when} a partir do "
+        f"{WAREHOUSES.get(manifest['warehouse'], manifest['warehouse'])}, no commit {commit}. "
+        f"São {len(files) + 1} arquivos: {number(total / 2**20)} MiB sem compressão e "
+        f"{number(total_gz / 2**20)} MiB com gzip. O contrato dos arquivos (esquemas, significado "
+        "de cada valor e regras para o site) está em docs/CONTRATO_DE_DADOS.md.",
+    ]
+    analysis_path, method_path = folder / "analysis.json", folder / "method.json"
+    headline = json.loads(analysis_path.read_text())["headline"] if analysis_path.exists() else None
+    if headline and headline["state_years"]:
+        lines += [
+            "",
+            "**Achado principal (soja).** "
+            f"Nos {headline['state_years']} UF-anos com normal climatológica e tendência "
+            f"({headline['first_year']}–{headline['last_year']}), a anomalia média de rendimento "
+            f"foi de {percent(headline['mean_anomaly_water_deficit_years'], True)} nos anos de "
+            f"seca na floração e enchimento, contra "
+            f"{percent(headline['mean_anomaly_other_years'], True)} nos demais; "
+            f"{percent(headline['below_trend_share_water_deficit_years'])} dos anos de seca "
+            f"ficaram abaixo da tendência, contra "
+            f"{percent(headline['below_trend_share_all_years'])} dos anos em geral. A correlação "
+            "entre balanço hídrico e anomalia é positiva em "
+            f"{headline['regions_with_positive_correlation']} das "
+            f"{headline['regions_with_correlation']} regiões imediatas com série. Associação, "
+            "não causalidade.",
+        ]
+    if method_path.exists():
+        method = json.loads(method_path.read_text())
+        sidra = method["validation"]["sidra_summary"]
+        cells = dict.fromkeys(("match", "documented", "mismatch"), 0)
+        for status, n in zip(sidra["status"], sidra["cells"], strict=True):
+            cells[status] += n
+        conab = method["validation"]["conab"]
+        compared = sum(bool(v) for v in conab["is_compared"])
+        beyond = sum(bool(v) for v in conab["is_beyond_tolerance"])
+        lines += [
+            "",
+            "**Validação.**",
+            f"- IBGE (agregados Brasil e UF da tabela 5457): {number(sum(cells.values()), 0)} "
+            f"células comparadas, {number(cells['match'], 0)} iguais, {cells['documented']} "
+            f"diferenças da própria fonte documentadas com o motivo e {cells['mismatch']} "
+            "divergências.",
+            f"- Conab (soja por UF, desde 2010, outro método): {compared} UF-anos comparados, "
+            f"{beyond} com diferença acima de 10% (aviso).",
+        ]
+        tests = method["dbt_tests"]
+        if tests:
+            lines.append(
+                f"- Testes do dbt no {WAREHOUSES.get(manifest['warehouse'])}: {tests['pass']} "
+                f"aprovados, {tests['warn']} avisos conhecidos, {tests['error'] + tests['fail']} "
+                "falhas."
+            )
+    lines += ["", "**Conciliação dos arquivos com os marts** (todas aprovadas):"]
+    lines += [f"- {CHECKS_PT.get(c['name'], c['name'])}" for c in manifest["checks"]]
+    lines += [
+        "",
+        f"Arquivo: `{asset}` ({number(size / 2**20)} MiB), sha256 `{digest}`. O ponteiro "
+        "`data-release.json` no repositório fixa esta versão para o build do site.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -112,7 +197,9 @@ def main(argv: list[str] | None = None) -> int:
     tarball(args.folder, target)
     digest, size = sha256(target), target.stat().st_size
     notes_path = args.out / f"release-notes-{version}.md"
-    notes_path.write_text(notes(manifest, version, asset, digest, size), encoding="utf-8")
+    notes_path.write_text(
+        notes(args.folder, manifest, version, asset, digest, size), encoding="utf-8"
+    )
     tag = f"data-v{version}"
     pointer = {
         "data_version": version,
@@ -137,7 +224,8 @@ def main(argv: list[str] | None = None) -> int:
     print("to publish (after review):")
     print(
         f"  gh release create {tag} {target} {args.folder / 'manifest.json'} "
-        f"--title 'Dados do site {version}' --notes-file {notes_path} --target <commit>"
+        f"--title 'Dados do site {version}' --notes-file {notes_path} "
+        f"--target {manifest['git']['commit']}"
     )
     return 0
 
