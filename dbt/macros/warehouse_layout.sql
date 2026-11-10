@@ -17,7 +17,7 @@
 {% macro guard_bigquery_writes() %}
     {% if execute and target.type == 'bigquery'
         and invocation_args_dict.get('which') in ('run', 'build', 'seed', 'snapshot')
-        and env_var('AGRO_CONFIRM_BIGQUERY_WRITE', '') != 'yes' %}
+        and env_var('ATLAS_CONFIRM_BIGQUERY_WRITE', '') != 'yes' %}
         {{ exceptions.raise_compiler_error(
             "Writing to BigQuery consumes the sandbox's lifetime storage quota. Run it through "
             "`uv run bq-dbt " ~ invocation_args_dict.get('which') ~ " ...`, which shows the quota "
