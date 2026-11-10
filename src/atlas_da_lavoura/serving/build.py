@@ -12,8 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
 
-from agro_observatory.serving.sources import SOURCES
-from agro_observatory.serving.warehouse import Table
+from atlas_da_lavoura.serving.sources import SOURCES
+from atlas_da_lavoura.serving.warehouse import Table
 
 SCHEMA_VERSIONS = {
     "catalog": 1,
@@ -249,8 +249,8 @@ class Bundle:
         return {
             "meta": self.ctx.meta("catalog", sorted(SOURCES)),
             "project": {
-                "name": "Agro Observatory",
-                "repository": "https://github.com/alveshenriique/agro-observatory",
+                "name": "Atlas da Lavoura",
+                "repository": "https://github.com/alveshenriique/atlas-da-lavoura",
             },
             "warehouse": self.ctx.warehouse,
             "sample": self.ctx.sample,

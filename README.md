@@ -1,7 +1,7 @@
-# Agro Observatory
+# Atlas da Lavoura
 
-[![CI](https://github.com/alveshenriique/agro-observatory/actions/workflows/ci.yml/badge.svg)](https://github.com/alveshenriique/agro-observatory/actions/workflows/ci.yml)
-[![Documentação do dbt](https://img.shields.io/badge/dbt%20docs-GitHub%20Pages-0a7bbd)](https://alveshenriique.github.io/agro-observatory/)
+[![CI](https://github.com/alveshenriique/atlas-da-lavoura/actions/workflows/ci.yml/badge.svg)](https://github.com/alveshenriique/atlas-da-lavoura/actions/workflows/ci.yml)
+[![Documentação do dbt](https://img.shields.io/badge/dbt%20docs-GitHub%20Pages-0a7bbd)](https://alveshenriique.github.io/atlas-da-lavoura/)
 
 Pipeline de engenharia de dados que cruza a produção agrícola municipal do IBGE (soja, milho e café, 1974–2025) com o IPCA do Banco Central e com o clima diário em grade do BR-DWGD, para responder de onde veio o crescimento da produção, como a fronteira agrícola migrou, quanto a produção se concentra e como anos de seca e calor se associam a quedas de rendimento.
 
@@ -70,8 +70,8 @@ Pré-requisitos: Git, Docker com Compose e [uv](https://docs.astral.sh/uv/). Tes
 Usa os mesmos arquivos que o CI. Não acessa nenhuma API.
 
 ```bash
-git clone https://github.com/alveshenriique/agro-observatory.git
-cd agro-observatory
+git clone https://github.com/alveshenriique/atlas-da-lavoura.git
+cd atlas-da-lavoura
 cp .env.example .env
 docker compose up -d --wait
 uv sync
@@ -118,7 +118,7 @@ Esses números medem associação, não causalidade: preço, pragas, tecnologia 
 - [docs/METODOLOGIA.md](docs/METODOLOGIA.md): como os números são calculados (valores especiais da PAM, deflação, quebra de unidade do café, janelas, anomalias, pesos, limiares, limitações).
 - [docs/VALIDACAO.md](docs/VALIDACAO.md): validação externa contra o IBGE e a Conab, análise de sensibilidade, achados da auditoria e correções.
 - [docs/CONTRATO_DE_DADOS.md](docs/CONTRATO_DE_DADOS.md): os arquivos que o site lê, o significado de cada valor, as regras de validade garantidas nos dados e as regras para o site.
-- [Documentação dos modelos do dbt](https://alveshenriique.github.io/agro-observatory/): linhagem, descrição de cada tabela e coluna, testes. Publicada no GitHub Pages a cada merge na `main`.
+- [Documentação dos modelos do dbt](https://alveshenriique.github.io/atlas-da-lavoura/): linhagem, descrição de cada tabela e coluna, testes. Publicada no GitHub Pages a cada merge na `main`.
 - O gráfico acima é gerado por `scripts/make_readme_chart.py` a partir dos marts e da view do achado principal, a mesma que alimenta o site.
 
 Os dados climáticos são do BR-DWGD (Xavier, A. C., Scanlon, B. R., King, C. W., & Alves, A. I. (2022). New improved Brazilian daily weather gridded data (1961–2020). *International Journal of Climatology*, 42(16), 8390–8404. https://doi.org/10.1002/joc.7731).

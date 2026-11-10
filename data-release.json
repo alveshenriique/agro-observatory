@@ -2,7 +2,7 @@
   "data_version": "2026.11.08",
   "release_tag": "data-v2026.11.08",
   "asset": "site-data-2026.11.08.tar.gz",
-  "asset_url": "https://github.com/alveshenriique/agro-observatory/releases/download/data-v2026.11.08/site-data-2026.11.08.tar.gz",
+  "asset_url": "https://github.com/alveshenriique/atlas-da-lavoura/releases/download/data-v2026.11.08/site-data-2026.11.08.tar.gz",
   "sha256": "933b46aa621ffc903cd0af628d07ea121299e6f0400efef7460178a6c1654c6c",
   "bytes": 10403148,
   "manifest_sha256": "255c65b0c6a76c162faf660a8ec5e75ed087791125b42cec284b0de862b77cd3",

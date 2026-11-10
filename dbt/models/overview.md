@@ -1,8 +1,8 @@
 {% docs __overview__ %}
 
-# Agro Observatory: modelos do dbt
+# Atlas da Lavoura: modelos do dbt
 
-Pipeline sobre a produção agrícola brasileira: Produção Agrícola Municipal (PAM) do IBGE para soja, milho e café (1974–2025), IPCA do Banco Central e clima diário em grade do BR-DWGD agregado por município. Este site documenta cada tabela, cada coluna e cada teste, com a linhagem entre elas (botão verde no canto inferior direito). O repositório, com o README, as decisões de engenharia, a metodologia e a validação, está em [github.com/alveshenriique/agro-observatory](https://github.com/alveshenriique/agro-observatory).
+Pipeline sobre a produção agrícola brasileira: Produção Agrícola Municipal (PAM) do IBGE para soja, milho e café (1974–2025), IPCA do Banco Central e clima diário em grade do BR-DWGD agregado por município. Este site documenta cada tabela, cada coluna e cada teste, com a linhagem entre elas (botão verde no canto inferior direito). O repositório, com o README, as decisões de engenharia, a metodologia e a validação, está em [github.com/alveshenriique/atlas-da-lavoura](https://github.com/alveshenriique/atlas-da-lavoura).
 
 ## Sobre os números deste site
 

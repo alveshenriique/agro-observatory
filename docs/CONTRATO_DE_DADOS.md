@@ -2,7 +2,7 @@
 
 Este documento descreve os arquivos que o site lê: onde estão, o que cada um traz, o que cada valor significa e as regras que o site precisa seguir. O site é estático e não consulta o warehouse. Tudo o que ele mostra vem destes arquivos, gerados pela camada de servir dados (views `serve_*` do dbt e o comando `export-serving`; ver [DECISOES.md](DECISOES.md#camada-de-servir-dados-arquivos-estáticos-para-o-site)).
 
-Os esquemas formais estão em [`src/agro_observatory/serving/schemas/`](../src/agro_observatory/serving/schemas/), em JSON Schema (Draft 2020-12) com descrições em português. Cada arquivo publicado é validado contra o seu esquema antes de ser gravado.
+Os esquemas formais estão em [`src/atlas_da_lavoura/serving/schemas/`](../src/atlas_da_lavoura/serving/schemas/), em JSON Schema (Draft 2020-12) com descrições em português. Cada arquivo publicado é validado contra o seu esquema antes de ser gravado.
 
 ## Índice
 
@@ -186,7 +186,7 @@ Cada regra do produto é garantida nos próprios dados, em três lugares:
 
 ## Fontes e atribuição
 
-O texto de citação de cada fonte (`attribution_pt`), as condições de uso e o período de referência estão em `catalog.json`, gerados de [`src/agro_observatory/serving/sources.py`](../src/agro_observatory/serving/sources.py):
+O texto de citação de cada fonte (`attribution_pt`), as condições de uso e o período de referência estão em `catalog.json`, gerados de [`src/atlas_da_lavoura/serving/sources.py`](../src/atlas_da_lavoura/serving/sources.py):
 
 | Chave | Fonte | Condição |
 |---|---|---|

@@ -43,7 +43,7 @@ class ContractError(ValueError):
 
 @cache
 def _schemas() -> dict[str, dict]:
-    folder = resources.files("agro_observatory.serving") / "schemas"
+    folder = resources.files("atlas_da_lavoura.serving") / "schemas"
     return {name: json.loads((folder / f"{name}.schema.json").read_text()) for name in SCHEMA_FILES}
 
 

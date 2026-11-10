@@ -22,9 +22,9 @@ from decimal import Decimal
 import numpy as np
 import shapely
 
-from agro_observatory.serving import topojson
-from agro_observatory.serving.build import MEASURES, QUANTITIES, REAL_VALUE
-from agro_observatory.serving.warehouse import Warehouse
+from atlas_da_lavoura.serving import topojson
+from atlas_da_lavoura.serving.build import MEASURES, QUANTITIES, REAL_VALUE
+from atlas_da_lavoura.serving.warehouse import Warehouse
 
 
 def queries(wh: Warehouse) -> dict[str, str]:

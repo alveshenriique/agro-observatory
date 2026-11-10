@@ -9,7 +9,7 @@ deficit class, with the mean of each group. The means and the subtitle numbers (
 deficit years below the trend, share of all years below it) come from serve.serve_analysis_headline,
 the model that also feeds the website, so the README and the site show the same numbers.
 
-Colours, font and style come from the visual identity (src/agro_observatory/viz/identity.py,
+Colours, font and style come from the visual identity (src/atlas_da_lavoura/viz/identity.py,
 validated by scripts/check_visual_identity.py). Reads marts.agg_climate_yield_association and
 serve.serve_analysis_headline in the Postgres configured by .env and writes two PNGs with solid
 backgrounds (light: #ffffff, dark: #0d1117, the GitHub page colours), so the image also reads
@@ -35,8 +35,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import FixedLocator, FuncFormatter  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from agro_observatory.load_raw import conninfo_from_env  # noqa: E402
-from agro_observatory.viz import identity as vi  # noqa: E402
+from atlas_da_lavoura.load_raw import conninfo_from_env  # noqa: E402
+from atlas_da_lavoura.viz import identity as vi  # noqa: E402
 
 STATE_NAMES = {"RS": "Rio Grande do Sul", "PR": "Paraná", "MT": "Mato Grosso"}
 

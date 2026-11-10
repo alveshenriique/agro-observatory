@@ -1,6 +1,6 @@
 """Validate the visual identity and render its reference images.
 
-Checks every colour of src/agro_observatory/viz/identity.py against both backgrounds and
+Checks every colour of src/atlas_da_lavoura/viz/identity.py against both backgrounds and
 fails (exit 1) when a rule is broken:
 - WCAG 2.x contrast: data colours >= 3:1 (graphical objects), text >= 4.5:1;
 - colour-blind distinguishability: every pair of data colours must differ by at least
@@ -31,7 +31,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from agro_observatory.viz import identity as vi  # noqa: E402
+from atlas_da_lavoura.viz import identity as vi  # noqa: E402
 
 DEFICIENCIES = {
     "deuteranopia": (simulate.Simulator_Vienot1999(), simulate.Deficiency.DEUTAN),

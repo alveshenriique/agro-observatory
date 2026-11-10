@@ -4,9 +4,9 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import pytest
 
-from agro_observatory.ingestion import pam
-from agro_observatory.ingestion.common import InvalidResponseError
-from agro_observatory.ingestion.pam import CROPS, Task
+from atlas_da_lavoura.ingestion import pam
+from atlas_da_lavoura.ingestion.common import InvalidResponseError
+from atlas_da_lavoura.ingestion.pam import CROPS, Task
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sidra_pam_corn_2024.json"
 CORN_2024 = Task(CROPS["corn"], 2024)

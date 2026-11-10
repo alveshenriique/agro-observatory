@@ -4,8 +4,8 @@ from pathlib import Path
 import pyarrow.parquet as pq
 import pytest
 
-from agro_observatory.ingestion import ipca
-from agro_observatory.ingestion.common import InvalidResponseError
+from atlas_da_lavoura.ingestion import ipca
+from atlas_da_lavoura.ingestion.common import InvalidResponseError
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sgs_ipca_sample.json"
 

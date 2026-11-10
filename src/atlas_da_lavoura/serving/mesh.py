@@ -29,7 +29,7 @@ import numpy as np
 import shapely
 from shapely.geometry import shape
 
-from agro_observatory.serving import topojson
+from atlas_da_lavoura.serving import topojson
 
 logger = logging.getLogger(__name__)
 

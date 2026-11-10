@@ -7,8 +7,8 @@ import httpx
 import numpy as np
 import pytest
 
-from agro_observatory.ingestion import brdwgd
-from agro_observatory.ingestion.brdwgd_download import (
+from atlas_da_lavoura.ingestion import brdwgd
+from atlas_da_lavoura.ingestion.brdwgd_download import (
     ChecksumError,
     HttpRangeFile,
     is_needed,
@@ -16,7 +16,7 @@ from agro_observatory.ingestion.brdwgd_download import (
     sha256_file,
     verify_checksum,
 )
-from agro_observatory.ingestion.ibge_mesh import read_mesh
+from atlas_da_lavoura.ingestion.ibge_mesh import read_mesh
 
 # 3 x 4 grid of 1-degree cells, centers at lat 0..2 and lon 10..13.
 GRID = brdwgd.Grid(latitudes=np.array([0.0, 1.0, 2.0]), longitudes=np.array([10.0, 11, 12, 13]))

@@ -30,10 +30,10 @@ from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
 
-from agro_observatory.ingestion.common import configure_logging
-from agro_observatory.serving import contract, mesh, reconcile
-from agro_observatory.serving.build import SCHEMA_VERSIONS, VIEWS, Bundle, Context
-from agro_observatory.serving.warehouse import MONTHLY_QUERY_QUOTA_BYTES, Warehouse, connect
+from atlas_da_lavoura.ingestion.common import configure_logging
+from atlas_da_lavoura.serving import contract, mesh, reconcile
+from atlas_da_lavoura.serving.build import SCHEMA_VERSIONS, VIEWS, Bundle, Context
+from atlas_da_lavoura.serving.warehouse import MONTHLY_QUERY_QUOTA_BYTES, Warehouse, connect
 
 logger = logging.getLogger(__name__)
 

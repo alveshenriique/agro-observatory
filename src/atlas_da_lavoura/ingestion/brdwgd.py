@@ -27,7 +27,7 @@ import xarray as xr
 from scipy import sparse
 from shapely.geometry import shape
 
-from agro_observatory.ingestion.brdwgd_download import (
+from atlas_da_lavoura.ingestion.brdwgd_download import (
     CHECKSUMS_PATH,
     DEFAULT_NETCDF_DIR,
     SOURCE_VERSION,
@@ -35,8 +35,8 @@ from agro_observatory.ingestion.brdwgd_download import (
     read_checksums,
     verify_checksum,
 )
-from agro_observatory.ingestion.common import configure_logging, write_parquet_atomic
-from agro_observatory.ingestion.ibge_mesh import DEFAULT_MESH_PATH, download_mesh, read_mesh
+from atlas_da_lavoura.ingestion.common import configure_logging, write_parquet_atomic
+from atlas_da_lavoura.ingestion.ibge_mesh import DEFAULT_MESH_PATH, download_mesh, read_mesh
 
 logger = logging.getLogger(__name__)
 

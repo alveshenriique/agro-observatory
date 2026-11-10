@@ -11,7 +11,7 @@
    case-insensitive and cannot contain hyphens: the loader replaces "-" with "_" there, and
    this macro applies the same rename. #}
 {% macro source_column(name) -%}
-    {{ return(adapter.dispatch('source_column', 'agro_observatory')(name)) }}
+    {{ return(adapter.dispatch('source_column', 'atlas_da_lavoura')(name)) }}
 {%- endmacro %}
 
 {% macro default__source_column(name) -%}
@@ -26,7 +26,7 @@
 {# True when `expression` matches the regular expression `pattern`. Write patterns in the
    subset POSIX (Postgres) and RE2 (BigQuery) share, e.g. [.] instead of \. #}
 {% macro regex_match(expression, pattern) -%}
-    {{ return(adapter.dispatch('regex_match', 'agro_observatory')(expression, pattern)) }}
+    {{ return(adapter.dispatch('regex_match', 'atlas_da_lavoura')(expression, pattern)) }}
 {%- endmacro %}
 
 {% macro default__regex_match(expression, pattern) -%}
@@ -41,7 +41,7 @@
 {# Parses a string into a date. `format` uses strftime codes (%d, %m, %Y), BigQuery's native
    notation; Postgres gets the equivalent to_date pattern. #}
 {% macro parse_date(expression, format) -%}
-    {{ return(adapter.dispatch('parse_date', 'agro_observatory')(expression, format)) }}
+    {{ return(adapter.dispatch('parse_date', 'atlas_da_lavoura')(expression, format)) }}
 {%- endmacro %}
 
 {% macro default__parse_date(expression, format) -%}
@@ -56,7 +56,7 @@
 {# A date from integer year, month and day expressions. dbt.date() only takes literals, so it
    cannot build a date from columns. #}
 {% macro date_from_parts(year, month, day) -%}
-    {{ return(adapter.dispatch('date_from_parts', 'agro_observatory')(year, month, day)) }}
+    {{ return(adapter.dispatch('date_from_parts', 'atlas_da_lavoura')(year, month, day)) }}
 {%- endmacro %}
 
 {% macro default__date_from_parts(year, month, day) -%}

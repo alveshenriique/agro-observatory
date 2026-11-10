@@ -23,8 +23,8 @@ import psycopg
 import pyarrow as pa
 from dotenv import find_dotenv, load_dotenv
 
-from agro_observatory.ingestion.common import configure_logging, write_parquet_atomic
-from agro_observatory.load_raw import conninfo_from_env
+from atlas_da_lavoura.ingestion.common import configure_logging, write_parquet_atomic
+from atlas_da_lavoura.load_raw import conninfo_from_env
 
 logger = logging.getLogger(__name__)
 

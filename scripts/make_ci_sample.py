@@ -24,7 +24,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-from agro_observatory.ingestion.common import write_parquet_atomic
+from atlas_da_lavoura.ingestion.common import write_parquet_atomic
 
 SOURCE_DIR = Path("data/raw")
 OUTPUT_DIR = Path("tests/fixtures/raw")
