@@ -5,7 +5,7 @@
 # log paths so it can run alongside other dbt commands.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-OUT=${1:-/tmp/agro_sensitivity}
+OUT=${1:-/tmp/atlas_sensitivity}
 mkdir -p "$OUT"
 DBT="uv run --env-file ../.env dbt"
 PATHS="--target-path target_audit --log-path logs_audit"

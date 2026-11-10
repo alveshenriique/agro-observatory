@@ -187,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     started = datetime.now(UTC)
     time.sleep(1)  # table modification times have millisecond resolution
-    env = {**dbt_env(), "AGRO_CONFIRM_BIGQUERY_WRITE": "yes"}
+    env = {**dbt_env(), "ATLAS_CONFIRM_BIGQUERY_WRITE": "yes"}
     code = subprocess.run(dbt_command, cwd=DBT_DIR, env=env).returncode
     measured = measure(ops.client(), started)
     ops.append_quota_log(
