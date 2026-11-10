@@ -38,7 +38,7 @@ import pyarrow.parquet as pq
 from dotenv import find_dotenv, load_dotenv
 from psycopg import sql
 
-from agro_observatory.ingestion.common import configure_logging
+from atlas_da_lavoura.ingestion.common import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -444,7 +444,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.target == "bigquery":
         if args.prune:
             parser.error("--prune is Postgres only: BigQuery tables are replaced entirely")
-        from agro_observatory import load_raw_bigquery
+        from atlas_da_lavoura import load_raw_bigquery
 
         return load_raw_bigquery.run(sources, args.data_dir, args.force, args.empty, args.yes)
     if args.yes or args.empty:

@@ -12,8 +12,8 @@ from typing import Protocol
 
 import psycopg
 
-from agro_observatory import bigquery_ops as ops
-from agro_observatory.load_raw import conninfo_from_env
+from atlas_da_lavoura import bigquery_ops as ops
+from atlas_da_lavoura.load_raw import conninfo_from_env
 
 logger = logging.getLogger(__name__)
 

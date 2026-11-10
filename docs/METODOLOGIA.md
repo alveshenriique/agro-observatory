@@ -1,6 +1,6 @@
 # Metodologia analítica
 
-Este documento explica como os números do Agro Observatory são calculados: o tratamento dos valores especiais da fonte, o modelo dimensional e a deflação, os marts analíticos (decomposição do crescimento, fronteira, concentração, bienalidade do café), o cruzamento entre clima e produção (janelas, limiares, anomalias, pesos) e as limitações de cada escolha. As decisões de engenharia estão em [DECISOES.md](DECISOES.md) e a validação dos resultados em [VALIDACAO.md](VALIDACAO.md).
+Este documento explica como os números do Atlas da Lavoura são calculados: o tratamento dos valores especiais da fonte, o modelo dimensional e a deflação, os marts analíticos (decomposição do crescimento, fronteira, concentração, bienalidade do café), o cruzamento entre clima e produção (janelas, limiares, anomalias, pesos) e as limitações de cada escolha. As decisões de engenharia estão em [DECISOES.md](DECISOES.md) e a validação dos resultados em [VALIDACAO.md](VALIDACAO.md).
 
 ## Índice
 

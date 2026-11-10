@@ -2,7 +2,7 @@
 # `uv run --env-file ../.env dbt ...` from this folder. The `prod` target (BigQuery) has no
 # credentials at all: it uses the Application Default Credentials of the machine
 # (`gcloud auth application-default login`), and writes to it go through `uv run bq-dbt`.
-agro_observatory:
+atlas_da_lavoura:
   target: dev
   outputs:
     dev:

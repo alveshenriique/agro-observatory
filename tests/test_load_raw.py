@@ -4,8 +4,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from agro_observatory import load_raw
-from agro_observatory.load_raw import SOURCES, Kind, SchemaMismatchError
+from atlas_da_lavoura import load_raw
+from atlas_da_lavoura.load_raw import SOURCES, Kind, SchemaMismatchError
 
 INGESTED_AT = datetime(2026, 1, 1, tzinfo=UTC)
 LOADED_AT = datetime(2026, 2, 1, tzinfo=UTC)

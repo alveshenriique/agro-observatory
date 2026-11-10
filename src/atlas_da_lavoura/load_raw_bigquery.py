@@ -26,8 +26,8 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from agro_observatory import bigquery_ops as ops
-from agro_observatory.load_raw import RAW_SCHEMA, SOURCES, Source, file_version, find_files
+from atlas_da_lavoura import bigquery_ops as ops
+from atlas_da_lavoura.load_raw import RAW_SCHEMA, SOURCES, Source, file_version, find_files
 
 logger = logging.getLogger(__name__)
 

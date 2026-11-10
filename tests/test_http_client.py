@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from agro_observatory.http_client import HttpClient
+from atlas_da_lavoura.http_client import HttpClient
 
 
 def make_client(responses: list[httpx.Response], sleeps: list[float]) -> HttpClient:

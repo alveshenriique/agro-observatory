@@ -1,4 +1,4 @@
-name: agro-observatory
+name: atlas-da-lavoura
 
 services:
   postgres:

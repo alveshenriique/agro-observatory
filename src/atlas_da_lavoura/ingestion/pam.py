@@ -15,8 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from agro_observatory.http_client import HttpClient
-from agro_observatory.ingestion.common import (
+from atlas_da_lavoura.http_client import HttpClient
+from atlas_da_lavoura.ingestion.common import (
     InvalidResponseError,
     configure_logging,
     raw_table,

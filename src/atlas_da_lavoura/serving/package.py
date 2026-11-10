@@ -26,7 +26,7 @@ import tarfile
 from pathlib import Path
 
 POINTER = Path("data-release.json")
-REPOSITORY = "alveshenriique/agro-observatory"
+REPOSITORY = "alveshenriique/atlas-da-lavoura"
 
 
 def sha256(path: Path) -> str:

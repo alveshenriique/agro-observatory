@@ -21,8 +21,8 @@ import psycopg
 from dotenv import find_dotenv, load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from agro_observatory import bigquery_ops as ops  # noqa: E402
-from agro_observatory.load_raw import conninfo_from_env  # noqa: E402
+from atlas_da_lavoura import bigquery_ops as ops  # noqa: E402
+from atlas_da_lavoura.load_raw import conninfo_from_env  # noqa: E402
 
 REL, ABS = 1e-9, 1e-9
 GRAINS = {

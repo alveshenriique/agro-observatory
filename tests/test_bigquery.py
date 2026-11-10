@@ -8,8 +8,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from agro_observatory import bigquery_ops as ops
-from agro_observatory import bq_dbt, export_window_indicators, load_raw, load_raw_bigquery
+from atlas_da_lavoura import bigquery_ops as ops
+from atlas_da_lavoura import bq_dbt, export_window_indicators, load_raw, load_raw_bigquery
 
 T0 = datetime(2026, 9, 26, 12, 0, tzinfo=UTC)
 T1 = datetime(2026, 11, 6, 12, 0, tzinfo=UTC)

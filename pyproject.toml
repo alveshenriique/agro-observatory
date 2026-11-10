@@ -1,5 +1,5 @@
 [project]
-name = "agro-observatory"
+name = "atlas-da-lavoura"
 version = "0.1.0"
 description = "Data pipeline on Brazilian agricultural production (IBGE PAM, BCB IPCA, BR-DWGD climate)."
 authors = [
@@ -20,15 +20,15 @@ dependencies = [
 ]
 
 [project.scripts]
-ingest-pam = "agro_observatory.ingestion.pam:main"
-ingest-localities = "agro_observatory.ingestion.localities:main"
-ingest-ipca = "agro_observatory.ingestion.ipca:main"
-load-raw = "agro_observatory.load_raw:main"
-ingest-brdwgd = "agro_observatory.ingestion.brdwgd:main"
-export-window-indicators = "agro_observatory.export_window_indicators:main"
-bq-dbt = "agro_observatory.bq_dbt:main"
-export-serving = "agro_observatory.serving.export:main"
-package-serving = "agro_observatory.serving.package:main"
+ingest-pam = "atlas_da_lavoura.ingestion.pam:main"
+ingest-localities = "atlas_da_lavoura.ingestion.localities:main"
+ingest-ipca = "atlas_da_lavoura.ingestion.ipca:main"
+load-raw = "atlas_da_lavoura.load_raw:main"
+ingest-brdwgd = "atlas_da_lavoura.ingestion.brdwgd:main"
+export-window-indicators = "atlas_da_lavoura.export_window_indicators:main"
+bq-dbt = "atlas_da_lavoura.bq_dbt:main"
+export-serving = "atlas_da_lavoura.serving.export:main"
+package-serving = "atlas_da_lavoura.serving.package:main"
 
 [build-system]
 requires = ["uv_build>=0.12.18,<0.13.0"]

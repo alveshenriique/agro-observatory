@@ -25,8 +25,8 @@ from pathlib import Path
 import psycopg
 from dotenv import dotenv_values, find_dotenv, load_dotenv
 
-from agro_observatory import bigquery_ops as ops
-from agro_observatory.load_raw import conninfo_from_env
+from atlas_da_lavoura import bigquery_ops as ops
+from atlas_da_lavoura.load_raw import conninfo_from_env
 
 DBT_DIR = Path("dbt")
 WRITING_COMMANDS = {"run", "build", "seed", "snapshot"}

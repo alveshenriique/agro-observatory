@@ -1,6 +1,6 @@
-name: agro_observatory
+name: atlas_da_lavoura
 version: "1.0.0"
-profile: agro_observatory
+profile: atlas_da_lavoura
 
 model-paths: ["models"]
 macro-paths: ["macros"]
@@ -54,7 +54,7 @@ flags:
   send_anonymous_usage_stats: false
 
 models:
-  agro_observatory:
+  atlas_da_lavoura:
     staging:
       +materialized: view
       +schema: staging
@@ -70,7 +70,7 @@ models:
       +schema: serve
 
 seeds:
-  agro_observatory:
+  atlas_da_lavoura:
     +schema: seeds
     crops:
       +column_types:

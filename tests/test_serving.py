@@ -9,8 +9,8 @@ import pytest
 import shapely
 from shapely.geometry import MultiPolygon, Polygon, box
 
-from agro_observatory.serving import build, contract, export, mesh, package, topojson
-from agro_observatory.serving.warehouse import Table
+from atlas_da_lavoura.serving import build, contract, export, mesh, package, topojson
+from atlas_da_lavoura.serving.warehouse import Table
 
 # --- TopoJSON -------------------------------------------------------------------------------
 
@@ -660,9 +660,9 @@ def run_results(tmp_path, select, target="prod"):
                 "metadata": {"dbt_version": "1.12.5", "invocation_id": "x", "generated_at": "t"},
                 "args": {"which": "test", "target": target, "select": select},
                 "results": [
-                    {"unique_id": "test.agro_observatory.a.1", "status": "pass"},
-                    {"unique_id": "test.agro_observatory.b.2", "status": "warn"},
-                    {"unique_id": "model.agro_observatory.c", "status": "success"},
+                    {"unique_id": "test.atlas_da_lavoura.a.1", "status": "pass"},
+                    {"unique_id": "test.atlas_da_lavoura.b.2", "status": "warn"},
+                    {"unique_id": "model.atlas_da_lavoura.c", "status": "success"},
                 ],
             }
         )

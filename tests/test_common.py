@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 import pyarrow.parquet as pq
 
-from agro_observatory.ingestion.common import raw_table, write_parquet_atomic
+from atlas_da_lavoura.ingestion.common import raw_table, write_parquet_atomic
 
 
 def test_raw_table_keeps_text_and_adds_ingestion_metadata() -> None:
