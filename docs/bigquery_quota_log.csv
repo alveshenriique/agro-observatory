@@ -1,1 +1,5 @@
 date_utc,operation,detail,estimated_bytes,measured_bytes
+2026-11-09T23:53:12Z,load-raw --empty,pam localities ipca brdwgd_municipality_cells climate_window_indicators,0,0
+2026-11-09T23:54:12Z,dbt build --empty,--empty --resource-type model seed,0,0
+2026-11-09T23:56:27Z,load-raw,pam localities ipca brdwgd_municipality_cells climate_window_indicators,856408647,856439289
+2026-11-09T23:58:13Z,dbt build,all,381564531,378123235

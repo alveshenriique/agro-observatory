@@ -171,6 +171,9 @@ Quando as tabelas expiram, o manifesto expira junto, e a próxima carga recarreg
 
 | Data | Operação | Gravado | Acumulado | Restante |
 |---|---|---|---|---|
+| 2026-11-09 | Validação com tabelas vazias: carga e build | 0 MiB | 0 MiB | 10.240 MiB |
+| 2026-11-09 | Carga completa da raw | 816,8 MiB | 816,8 MiB | 9.423,2 MiB |
+| 2026-11-09 | `dbt build` completo | 360,6 MiB | 1.177,4 MiB | 9.062,6 MiB |
 
 Os ciclos do projeto GCP anterior, de 2026-11-06 a 2026-11-08, gravaram 1.350,8 MiB:
 - a validação com tabelas vazias, a custo zero;
@@ -181,7 +184,7 @@ Os ciclos do projeto GCP anterior, de 2026-11-06 a 2026-11-08, gravaram 1.350,8 
 
 O projeto anterior é encerrado depois da migração, e o consumo dele não conta para a cota do atual.
 
-Um ciclo completo (carga e build) grava cerca de 1.186 MiB, então a cota de um projeto novo comporta cerca de 8 ciclos completos, ou cerca de 27 builds sem recarga da raw. As views da camada de servir não gravam nada; cada exportação só usa cota de consulta (cerca de 440 MiB processados, 0,04% da cota mensal de 1 TiB, que se renova). A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
+Um ciclo completo (carga e build) grava cerca de 1.180 MiB, então a cota restante comporta cerca de 7 ciclos completos, ou cerca de 25 builds sem recarga da raw. As views da camada de servir não gravam nada; cada exportação só usa cota de consulta (cerca de 440 MiB processados, 0,04% da cota mensal de 1 TiB, que se renova). A carga da PAM, com 749 MiB, é a maior parte de cada ciclo, e só se repete quando a PAM muda ou quando as tabelas expiram.
 
 ## Camada de servir dados: arquivos estáticos para o site
 
