@@ -1,11 +1,11 @@
 {
-  "data_version": "2026.11.08",
-  "release_tag": "data-v2026.11.08",
-  "asset": "site-data-2026.11.08.tar.gz",
-  "asset_url": "https://github.com/alveshenriique/atlas-da-lavoura/releases/download/data-v2026.11.08/site-data-2026.11.08.tar.gz",
-  "sha256": "933b46aa621ffc903cd0af628d07ea121299e6f0400efef7460178a6c1654c6c",
-  "bytes": 10403148,
-  "manifest_sha256": "255c65b0c6a76c162faf660a8ec5e75ed087791125b42cec284b0de862b77cd3",
+  "data_version": "2026.11.10",
+  "release_tag": "data-v2026.11.10",
+  "asset": "site-data-2026.11.10.tar.gz",
+  "asset_url": "https://github.com/alveshenriique/atlas-da-lavoura/releases/download/data-v2026.11.10/site-data-2026.11.10.tar.gz",
+  "sha256": "219b284bf3f5156afa443cc1b4ac5d57ca863b11124d898bec33d48c91420ee7",
+  "bytes": 10403370,
+  "manifest_sha256": "d91f96944de20881f3b67b10966e1af0bce50b6026a21c7cb5c2eed647158a15",
   "schema_versions": [
     "analysis/1",
     "catalog/1",
@@ -15,7 +15,7 @@
     "place/1",
     "topology/1"
   ],
-  "generated_at": "2026-11-08T14:15:52Z",
+  "generated_at": "2026-11-10T00:05:09Z",
   "warehouse": "bigquery",
-  "commit": "7e890c8ad93fe1560777d13b79e99fe98169f7a8"
+  "commit": "c0a1f2e62023dd2e8c15ab361f2a01df4855c0cf"
 }
