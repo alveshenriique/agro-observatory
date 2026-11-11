@@ -327,6 +327,24 @@ rodam no CI e na máquina de desenvolvimento. Nada disso entra no site publicado
 HTML estático sem dependência de runtime além das ilhas React empacotadas no build;
 `npm audit fix --force` rebaixaria o Lighthouse CI e foi descartado.
 
+**TypeScript fica na versão 6 (decisão de 2026-11-11).** O TypeScript 7 é o port nativo
+do compilador para Go e saiu sem a API programática que as ferramentas de checagem de
+tipos de frameworks usam; o próprio anúncio da versão diz que projetos com Vue, MDX,
+Astro e Svelte precisam continuar no TypeScript 6 por enquanto, e que a API nova deve
+chegar na 7.1. No projeto, o `@astrojs/check` (que roda o `astro check` do CI) aceita só
+`typescript` 5 ou 6, e o `@volar/kit`, base do servidor de linguagem do Astro, declara
+`typescript <7`; com o TypeScript 7, o `npm ci` nem resolve as dependências. Forçar a
+instalação com `--legacy-peer-deps` foi testado e descartado: o próprio `astro check`
+recusa o 7.0 ("does not currently support TypeScript 7.0") e manda instalar o 6. O PR
+do Dependabot que subia para a 7 (#15) foi fechado sem merge, e o Dependabot passou a
+ignorar as versões principais do `typescript` em `web/`; as correções e versões menores
+do 6 continuam chegando. O caminho do Astro para o TypeScript 7 é o
+`@astrojs/ts-content-mapper`, que faz o `tsc` checar os arquivos `.astro` direto, mas ele
+está na versão 0.2.0, é experimental e exige o TypeScript 7.1, que hoje só existe em
+beta; o Astro avisa que o `astro check` será descontinuado numa versão futura. Reavaliar
+quando o TypeScript 7.1 for estável e o `@astrojs/ts-content-mapper` deixar de ser
+experimental: aí a checagem migra para ele e a regra sai do `.github/dependabot.yml`.
+
 **Hospedagem (decidido; configuração na etapa de publicação):** o site vai para a
 Cloudflare (Workers static assets), que no plano gratuito, sem cartão, serve estáticos
 sem limite de banda e aceita cabeçalhos de segurança via `_headers`; o GitHub Pages não
