@@ -18,6 +18,7 @@ jobs:
   changes:
     name: Detect changed paths
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       web: ${{ steps.filter.outputs.web }}
     steps:
@@ -38,6 +39,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-24.04
+    # Ceiling for the whole job (GitHub's default is 360 minutes). The network-bound and
+    # browser steps carry tighter limits of their own, so a stall fails within minutes.
+    timeout-minutes: 15
+    env:
+      # actions/cache and setup-node wait up to 10 minutes on a stalled cache segment by
+      # default; give up sooner and carry on as a cache miss.
+      SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2
     defaults:
       run:
         working-directory: web
@@ -59,9 +67,11 @@ jobs:
           key: site-data-${{ hashFiles('data-release.json') }}
 
       - name: Install dependencies
+        timeout-minutes: 5
         run: npm ci
 
       - name: Download, verify (sha256) and extract the data package
+        timeout-minutes: 3
         run: npm run fetch-data
 
       - name: Generate TypeScript types from the JSON Schemas
@@ -79,16 +89,27 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Only the headless shell (the tests run headless) and no --with-deps: the
+      # ubuntu-24.04 image already ships every library Chromium needs, and --with-deps
+      # would make the job depend on apt and the Ubuntu mirrors. If a future image lacks
+      # a library, Chromium fails at launch, in seconds, naming it.
       - name: Install the Playwright browser
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 3
+        run: npx playwright install --only-shell chromium
 
+      # Playwright's globalTimeout (playwright.config.ts) stops the run first, so the
+      # report is still printed.
       - name: End-to-end and accessibility tests (Playwright + axe)
+        timeout-minutes: 6
         run: npm run e2e
 
+      # Lighthouse CI runs the runner image's Google Chrome.
       - name: Performance budget, desktop (Lighthouse CI)
+        timeout-minutes: 6
         run: npm run lhci:desktop
 
       - name: Performance budget, mobile (Lighthouse CI)
+        timeout-minutes: 6
         run: npm run lhci:mobile
 
   site-status:
@@ -98,6 +119,7 @@ jobs:
     needs: [changes, site]
     if: always()
     runs-on: ubuntu-24.04
+    timeout-minutes: 2
     steps:
       - name: Pass when the site job passed or was skipped
         env:

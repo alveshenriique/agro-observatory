@@ -1,12 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// End-to-end tests run against the production build served by `astro preview`; every
-// test runs twice, once per colour scheme, so both themes stay accessible.
+// End-to-end tests run against the production build in dist/; every test runs twice,
+// once per colour scheme, so both themes stay accessible.
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  ...(process.env.CI ? { workers: 1 } : {}),
+  // Must stay below the e2e step's timeout-minutes in site.yml, so Playwright stops the
+  // run (and still reports) before GitHub kills the step.
+  globalTimeout: process.env.CI ? 4 * 60_000 : 0,
   reporter: process.env.CI ? "list" : "html",
   use: {
     baseURL: "http://127.0.0.1:4321",

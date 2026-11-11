@@ -16,6 +16,9 @@ const cacheDir = path.join(webRoot, ".cache");
 const tarball = path.join(cacheDir, `${release.sha256}.tar.gz`);
 const dataDir = path.join(webRoot, "public", "data");
 const target = path.join(dataDir, release.data_version);
+// The package is ~10 MB; without a deadline a stalled connection would wait on undici's
+// 5-minute header and body timeouts, and a slow trickle would never time out.
+const DOWNLOAD_TIMEOUT_MS = 120_000;
 
 function sha256(file) {
   return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
@@ -34,13 +37,24 @@ function verify(file) {
 
 async function download() {
   console.log(`downloading ${release.asset_url}`);
-  const response = await fetch(release.asset_url);
-  if (!response.ok) {
-    throw new Error(`download failed: HTTP ${response.status}`);
+  let body;
+  try {
+    const response = await fetch(release.asset_url, {
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      throw new Error(`download failed: HTTP ${response.status}`);
+    }
+    body = Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    if (error?.name === "TimeoutError") {
+      throw new Error(`download timed out after ${DOWNLOAD_TIMEOUT_MS / 1000} s`);
+    }
+    throw error;
   }
   fs.mkdirSync(cacheDir, { recursive: true });
   const temporary = `${tarball}.part`;
-  fs.writeFileSync(temporary, Buffer.from(await response.arrayBuffer()));
+  fs.writeFileSync(temporary, body);
   fs.renameSync(temporary, tarball);
 }
 

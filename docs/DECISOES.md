@@ -300,6 +300,23 @@ de 0,90 (Análise, Municípios e Método) e aviso abaixo de 0,80 no Explorar. O
 `astro preview` do Astro 7 vira daemon e não serve para o `webServer` do Playwright; os
 testes usam um servidor estático comum.
 
+**CI do site: navegador sem `--with-deps` e timeouts explícitos.** O job instala só o
+Chromium headless shell (`playwright install --only-shell chromium`), sem o
+`--with-deps` do exemplo da documentação do Playwright. O `--with-deps` roda `apt-get`
+contra os espelhos do Ubuntu: na primeira execução do PR, uma falha de DNS desses
+espelhos deixou o job 10 minutos parado tentando instalar fontes de fallback (chinês,
+japonês, tailandês) que o site não usa, enquanto todas as bibliotecas do Chromium já
+vinham na imagem `ubuntu-24.04`. Se uma imagem futura não tiver alguma, o navegador
+falha ao abrir, em segundos, dizendo qual falta. O Lighthouse CI usa o Google Chrome da
+própria imagem. O cache dos navegadores foi descartado porque a documentação do
+Playwright não o recomenda: restaurar leva quase o mesmo tempo que baixar. Quanto aos
+limites de tempo: o padrão do GitHub é 360 minutos por job, então cada passo de rede ou
+de navegador ganhou o seu próprio `timeout-minutes` (de 3 a 6 minutos), e o job tem um
+teto de 15. A restauração dos caches desiste de um segmento travado em 2 minutos, em vez
+de 10, e segue como cache miss. O download do pacote de dados aborta em 2 minutos. No
+CI, o Playwright roda com um worker e tem `globalTimeout` de 4 minutos, abaixo do limite
+do passo, para parar sozinho e ainda imprimir o relatório.
+
 **Dependências do site: Dependabot e vulnerabilidades atuais.** O Dependabot também
 acompanha o ecossistema npm de `web/`, semanalmente, com o mesmo prefixo de commit das
 actions. As vulnerabilidades que o `npm audit` acusa hoje (9 "high") estão todas na
