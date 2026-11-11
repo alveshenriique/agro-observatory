@@ -35,7 +35,7 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "http-server": "^14.1.1",
-    "jsdom": "^29.1.1",
+    "jsdom": "^31.0.0",
     "json-schema-to-typescript": "^16.0.0",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
