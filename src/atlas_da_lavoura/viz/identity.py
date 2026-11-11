@@ -22,7 +22,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 THEMES = ("light", "dark")
+# Backgrounds of the charts made for GitHub (the README), the page colours there.
 BACKGROUND = {"light": "#ffffff", "dark": "#0d1117"}
+# The site sits on a warm white, the paper of the approved page drafts; highlight bands (the
+# municipality search) have a warm tone of their own. The dark theme uses a warm near-black
+# with about the luminance of GitHub's #0d1117, so every colour keeps its contrast. Both are
+# validated like BACKGROUND: text >= MIN_TEXT_CONTRAST on each, data and the strong end of the
+# map ramp >= MIN_GRAPHIC_CONTRAST on the page.
+SITE_BACKGROUND = {"light": "#fcfbf9", "dark": "#13110e"}
+BAND = {"light": "#efebe2", "dark": "#1f1b16"}
 
 # Validation thresholds (checked by scripts/check_visual_identity.py).
 MIN_TEXT_CONTRAST = 4.5  # WCAG 2.x, normal text
@@ -119,12 +127,80 @@ SEQUENTIAL = {
 }
 
 # --- Typography. -----------------------------------------------------------------------------
-# IBM Plex Sans 3.005 (github.com/IBM/plex, SIL OFL 1.1), static files bundled with the licence.
-FONT_FAMILY = "IBM Plex Sans"
+# Three voices of one superfamily, IBM Plex (github.com/IBM/plex, SIL OFL 1.1): serif for the
+# titles, sans for the running text, mono for numbers, labels and metadata. Static files from
+# IBM's official releases, bundled with the licence (fonts/OFL.txt, the same text for the three
+# families). scripts/check_visual_identity.py validates every file: family name, licence,
+# REQUIRED_CHARACTERS, a zero without slash or dot, I, l and 1 with different outlines,
+# x-height >= MIN_X_HEIGHT_EM and matplotlib picking the right file for each weight.
 FONT_DIR = Path(__file__).parent / "fonts"
-FONT_FILES = ("IBMPlexSans-Regular.ttf", "IBMPlexSans-Bold.ttf")
+# Characters the charts and the site print: digits, signs, Portuguese accents, punctuation.
+REQUIRED_CHARACTERS = "0123456789%+−–—·×≤°…“”‘’áàâãéêíóôõúüçÁÀÂÃÉÊÍÓÔÕÚÇ"
+MIN_X_HEIGHT_EM = 0.5
+
+
+@dataclass(frozen=True)
+class Typeface:
+    role: str
+    name_pt: str
+    family: str
+    files: tuple[tuple[int, str], ...]  # (CSS weight, bundled TTF); only the weights in use
+    features: tuple[str, ...]  # OpenType features always on
+    release: str
+
+
+TEXT_FACE = Typeface(
+    "text",
+    "texto corrido e interface",
+    "IBM Plex Sans",
+    ((400, "IBMPlexSans-Regular.ttf"), (700, "IBMPlexSans-Bold.ttf")),
+    (),
+    "@ibm/plex-sans@1.1.0 (fonte 3.005)",
+)
+TITLE_FACE = Typeface(
+    "titles",
+    "títulos e parágrafo de abertura",
+    "IBM Plex Serif",
+    ((400, "IBMPlexSerif-Regular.ttf"),),
+    (),
+    "@ibm/plex-serif@2.0.0 (fonte 3.006)",
+)
+# Plex Mono's default zero has a dot and its "zero" feature slashes it; ss04 gives the plain
+# zero of the Sans and the Serif. A marked zero is what ruled out Atkinson Hyperlegible
+# ("2ØØ5" in years and percentages).
+NUMBER_FACE = Typeface(
+    "numbers",
+    "números, rótulos e metadados",
+    "IBM Plex Mono",
+    ((400, "IBMPlexMono-Regular.ttf"), (600, "IBMPlexMono-SemiBold.ttf")),
+    ("ss04",),
+    "@ibm/plex-mono@2.5.0 (fonte 2.005)",
+)
+TYPEFACES = (TEXT_FACE, TITLE_FACE, NUMBER_FACE)
+# The main number of a page (the 73% of the Análise) is the one number set in the sans bold:
+# heavier than any weight of the mono. Every other number stays in the mono.
+DISPLAY_NUMBER = (TEXT_FACE, 700)
+
+# matplotlib charts keep the sans for everything (the README chart).
+FONT_FAMILY = TEXT_FACE.family
+FONT_FILES = tuple(name for face in TYPEFACES for _, name in face.files)
 # Type scale in points for a 10-inch-wide figure shown about 800 px wide.
 TYPE_SCALE = {"title": 17, "subtitle": 14, "panel_title": 13, "label": 12, "small": 11}
+# Site type scale in rem, (narrow, wide): sizes grow linearly between the viewport widths of
+# WEB_VIEWPORT_PX, so a phone and the 1,240 px layout each get their own size.
+WEB_VIEWPORT_PX = (360, 1240)
+WEB_TYPE_SCALE = {
+    "display": (3.5, 6.0),  # the main number
+    # Page title. 3.25 rem is the largest size at which the Análise title fits two lines in
+    # the eight columns of the 1,240 px layout, with its short words kept together.
+    "headline": (2.25, 3.25),
+    "brand": (1.25, 1.625),  # site name in the header
+    "section": (1.5, 2.0),  # section and figure titles
+    "stat": (1.75, 2.5),  # supporting numbers
+    "deck": (1.125, 1.3125),  # opening paragraph
+    "body": (1.0, 1.0625),  # running text
+    "meta": (0.8125, 0.875),  # labels, sources and metadata (mono)
+}
 
 
 def palette(theme: str) -> dict[str, str]:
@@ -136,8 +212,26 @@ def as_dict() -> dict:
     """Plain, JSON-serialisable description of the identity (e.g. for a Power BI theme)."""
     return {
         "font_family": FONT_FAMILY,
+        "typefaces": [
+            {
+                "role": face.role,
+                "name_pt": face.name_pt,
+                "family": face.family,
+                "weights": [weight for weight, _ in face.files],
+                "features": list(face.features),
+                "release": face.release,
+            }
+            for face in TYPEFACES
+        ],
+        "display_number": {"role": DISPLAY_NUMBER[0].role, "weight": DISPLAY_NUMBER[1]},
         "type_scale_pt": TYPE_SCALE,
+        "web_type_scale_rem": {
+            "viewport_px": list(WEB_VIEWPORT_PX),
+            **{role: list(sizes) for role, sizes in WEB_TYPE_SCALE.items()},
+        },
         "background": BACKGROUND,
+        "site_background": SITE_BACKGROUND,
+        "band": BAND,
         "sequential": {
             "name_pt": "escala sequencial (intensidade no mapa)",
             "light": list(SEQUENTIAL["light"]),
@@ -159,7 +253,7 @@ def as_dict() -> dict:
 
 
 def register_fonts() -> None:
-    """Make the bundled font available to matplotlib (no system installation needed)."""
+    """Make the bundled fonts available to matplotlib (no system installation needed)."""
     from matplotlib import font_manager
 
     for name in FONT_FILES:
