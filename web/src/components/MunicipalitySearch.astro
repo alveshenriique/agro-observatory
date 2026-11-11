@@ -1,0 +1,57 @@
+---
+// Search over the municipality index of the data package, with autocomplete; choosing one,
+// or "Abrir ficha", opens /municipio/<código IBGE>/. Without JavaScript the form submits to
+// the Municípios page.
+import { dataBasePath } from "../lib/data";
+import { sourced } from "../lib/sourced";
+import Num from "./Num.astro";
+
+const count = sourced("catalog.json", "/municipality_count", "int");
+---
+
+<form
+  class="search"
+  role="search"
+  action="/municipios/"
+  method="get"
+  data-municipality-search
+  data-index={`${dataBasePath}/municipalities.json`}
+>
+  <label class="search__label meta" for="busca-municipio">Município</label>
+  <div class="search__row">
+    <div class="search__field">
+      <input
+        id="busca-municipio"
+        class="search__input"
+        name="q"
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded="false"
+        aria-controls="busca-municipio-opcoes"
+        aria-describedby="busca-municipio-ajuda"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Sorriso, Rio Verde, Patrocínio…"
+        data-placeholder-short="Ex.: Sorriso"
+      />
+      <ul
+        id="busca-municipio-opcoes"
+        class="search__options"
+        role="listbox"
+        aria-label="Municípios encontrados"
+        hidden
+      >
+      </ul>
+    </div>
+    <button class="search__button" type="submit">Abrir ficha</button>
+  </div>
+  <p id="busca-municipio-ajuda" class="search__help small">
+    Busca entre os <Num n={count} /> municípios do Brasil.
+  </p>
+  <p class="visually-hidden" role="status" data-status></p>
+</form>
+
+<script>
+  import "../scripts/municipality-search";
+</script>

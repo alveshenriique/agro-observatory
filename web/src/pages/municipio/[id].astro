@@ -1,0 +1,51 @@
+---
+// One static page per municipality, at /municipio/<código IBGE>/, generated from the
+// municipality index of the data package. Still a skeleton: the profile comes in its own step.
+import Base from "../../layouts/Base.astro";
+import { loadDataFile } from "../../lib/data";
+import { bindShortWords } from "../../lib/typography";
+import type { MunicipalitiesJson } from "../../types/data/municipalities";
+
+export function getStaticPaths() {
+  const { municipalities, states } = loadDataFile<MunicipalitiesJson>("municipalities.json");
+  const stateName = new Map(
+    states.state_abbreviation.map((abbreviation, i) => [abbreviation, states.state_name[i]]),
+  );
+  return municipalities.municipality_id.map((id, i) => {
+    const state = municipalities.state_abbreviation[i] ?? "";
+    return {
+      params: { id: String(id) },
+      props: {
+        name: municipalities.municipality_name[i] ?? "",
+        state,
+        stateName: stateName.get(state) ?? state,
+      },
+    };
+  });
+}
+
+interface Props {
+  name: string;
+  state: string;
+  stateName: string;
+}
+
+const { name, state, stateName } = Astro.props;
+---
+
+<Base
+  title={`${name} (${state})`}
+  description={`Ficha de ${name} (${stateName}): produção, comparação com a região e o estado, ranking e risco de seca da região.`}
+>
+  <div class="container grid">
+    <div class="col-text">
+      <p class="kicker">Município · {stateName}</p>
+      <h1>{bindShortWords(name)}</h1>
+      <p class="placeholder">
+        A ficha deste município está em construção: produção, comparação com a região e o
+        estado, ranking e risco de seca na floração da região.
+      </p>
+      <p><a href="/">Voltar para a Análise</a></p>
+    </div>
+  </div>
+</Base>

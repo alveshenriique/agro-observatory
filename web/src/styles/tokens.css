@@ -1,12 +1,28 @@
 /* Generated from src/atlas_da_lavoura/viz/identity.py by scripts/make_web_tokens.py. Do not edit by hand: run `uv run python scripts/make_web_tokens.py`. */
 :root {
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-sans-features: normal;
+  --font-serif: "IBM Plex Serif", Georgia, serif;
+  --font-serif-features: normal;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono-features: "ss04";
+  --font-display-number: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display-number-weight: 700;
   --text-title: 1.4167rem;
   --text-subtitle: 1.1667rem;
   --text-panel-title: 1.0833rem;
   --text-label: 1rem;
   --text-small: 0.9167rem;
-  --color-background: #ffffff;
+  --size-display: clamp(3.5rem, 2.4773rem + 4.5455vw, 6rem);
+  --size-headline: clamp(2.25rem, 1.8409rem + 1.8182vw, 3.25rem);
+  --size-brand: clamp(1.25rem, 1.0966rem + 0.6818vw, 1.625rem);
+  --size-section: clamp(1.5rem, 1.2955rem + 0.9091vw, 2rem);
+  --size-stat: clamp(1.75rem, 1.4432rem + 1.3636vw, 2.5rem);
+  --size-deck: clamp(1.125rem, 1.0483rem + 0.3409vw, 1.3125rem);
+  --size-body: clamp(1rem, 0.9744rem + 0.1136vw, 1.0625rem);
+  --size-meta: clamp(0.8125rem, 0.7869rem + 0.1136vw, 0.875rem);
+  --color-background: #fcfbf9;
+  --color-band: #efebe2;
   --color-dry: #895819;
   --color-wet: #1a695f;
   --color-hot: #67001f;
@@ -27,7 +43,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #0d1117;
+    --color-background: #13110e;
+    --color-band: #1f1b16;
     --color-dry: #a36c22;
     --color-wet: #7cbab5;
     --color-hot: #de8475;

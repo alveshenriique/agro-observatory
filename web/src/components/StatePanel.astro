@@ -1,0 +1,47 @@
+---
+// One state of the figure's panel: its name, how many water-deficit years it had and how
+// many of them fell below the trend, and its bars on the scale shared by every state.
+import type { StatePanel } from "../lib/analysis";
+import { BAR_COLUMNS, TABLE } from "../lib/analysis";
+import type { Sourced } from "../lib/sourced";
+import { sourced } from "../lib/sourced";
+import { bindShortWords } from "../lib/typography";
+import AnomalyBars from "./charts/AnomalyBars";
+import Num from "./Num.astro";
+
+interface Props {
+  panel: StatePanel;
+  years: [number, number];
+  extent: [number, number];
+  deficitLabel: string;
+  first: Sourced;
+  last: Sourced;
+}
+
+const { panel, years, extent, deficitLabel, first, last } = Astro.props;
+const stat = (column: string, fmt: "int" | "pct") =>
+  sourced("analysis.json", `/climate_summary_by_state/${column}/${panel.summaryRow}`, fmt);
+---
+
+<li class="panel">
+  <h4 class="panel__name">{bindShortWords(panel.name)}</h4>
+  <p class="panel__stat small">
+    <Num n={stat("water_deficit_years", "int")} /> anos de seca ·{" "}
+    <Num n={stat("water_deficit_hit_rate", "pct")} /> deles abaixo da tendência
+  </p>
+  <AnomalyBars
+    label={`${panel.name}: rendimento da soja em relação à tendência, por safra. Use as setas para percorrer os anos.`}
+    bars={panel.bars}
+    missingYears={panel.missingYears}
+    years={years}
+    extent={extent}
+    deficitLabel={deficitLabel}
+    table={TABLE}
+    cols={BAR_COLUMNS}
+    variant="panel"
+  />
+  <p class="panel__years meta" aria-hidden="true">
+    <Num n={first} />
+    <Num n={last} />
+  </p>
+</li>

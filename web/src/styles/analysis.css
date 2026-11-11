@@ -1,0 +1,652 @@
+/* Análise, after the approved draft (the "combined" version): opening with the main number
+   beside the title, the figure, the supporting numbers and the search band. Colours, fonts
+   and sizes come from tokens.css. */
+
+/* --- Opening: title and deck on the left eight columns, the main number on the right four,
+   at the height of the title. On a phone the order stays: title, deck, number. --- */
+.opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: clamp(1.5rem, 4vw, 3rem) clamp(2rem, 4vw, 3rem);
+}
+
+@media (min-width: 64rem) {
+  /* The last row takes whatever the finding needs beyond the title and the deck, so the
+     deck stays right under the title. */
+  .opening {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--gutter);
+  }
+
+  .opening__kicker,
+  .opening__title,
+  .opening__deck {
+    grid-column: 1 / span 8;
+  }
+
+  .opening__finding {
+    grid-column: 9 / -1;
+    grid-row: 2 / -1;
+    align-self: start;
+    margin-top: 0.9rem;
+  }
+}
+
+.opening__kicker {
+  margin-bottom: 0.6rem;
+}
+
+.opening__title {
+  margin-block: 0 0.4em;
+}
+
+.deck {
+  font-family: var(--font-serif);
+  font-feature-settings: var(--font-serif-features);
+  font-size: var(--size-deck);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+/* The finding: a dry rule, the number in the sans bold, one sentence with the comparison. */
+.finding {
+  margin-top: 1.75rem;
+  padding-top: 0.6rem;
+  border-top: 2px solid var(--color-dry);
+}
+
+.finding p {
+  margin: 0;
+}
+
+.finding .finding__number {
+  font-family: var(--font-display-number);
+  font-feature-settings: normal;
+  font-weight: var(--font-display-number-weight);
+  font-size: var(--size-display);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-dry);
+}
+
+.finding__text {
+  margin-top: 0.5rem;
+  color: var(--color-text-secondary);
+  max-width: 26rem;
+}
+
+.finding__text strong {
+  color: var(--color-text);
+}
+
+.finding__note {
+  margin-top: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+/* --- Figure 1. --- */
+.figure {
+  margin: 0;
+}
+
+.figure__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--color-text);
+}
+
+.figure__title,
+.figure__subtitle,
+.panel__name {
+  font-family: var(--font-sans);
+  font-feature-settings: normal;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.figure__title,
+.figure__subtitle {
+  font-size: var(--size-body);
+}
+
+.figure__reading {
+  margin: 0.35rem 0 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.legend__swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.legend__swatch--deficit {
+  background: var(--color-dry);
+}
+
+.legend__swatch--other {
+  background: var(--color-neutral);
+}
+
+.legend__swatch--missing {
+  border: 1px dashed var(--color-text-muted);
+}
+
+.figure__panels {
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem var(--gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 40rem) {
+  .panels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.panel__name {
+  font-size: var(--size-meta);
+}
+
+.panel__stat {
+  margin: 0 0 0.3rem;
+  color: var(--color-text-secondary);
+}
+
+.panel__years {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.1rem 0 0;
+  line-height: 1.2;
+  color: var(--color-text-muted);
+}
+
+/* "Mostrar as 16 UFs": a details/summary, so it opens with the keyboard and without
+   JavaScript; the label swaps with the state, and the summary keeps its button role. */
+.panels-more {
+  margin-top: 1.25rem;
+}
+
+.panels-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-text-muted);
+  list-style: none;
+  font-weight: 700;
+}
+
+.panels-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.panels-more > summary:hover {
+  background: var(--color-band);
+}
+
+.panels-more:not([open]) .when-open,
+.panels-more[open] .when-closed {
+  display: none;
+}
+
+.panels-more > .panels {
+  margin-top: 1.25rem;
+}
+
+/* The caption: source on the left, the data, method and anchor links on the right. */
+.figure__caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  margin-top: 1.5rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--color-grid);
+  color: var(--color-text-muted);
+}
+
+.figure__caption p {
+  margin: 0;
+  max-width: 48rem;
+}
+
+.figure__links {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.figure__links a {
+  color: var(--color-text);
+}
+
+.figure__data {
+  margin-top: 0.9rem;
+}
+
+.figure__data summary {
+  font-size: var(--size-meta);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.figure__data table {
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  font-size: var(--size-meta);
+}
+
+.figure__data caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 0.4rem;
+}
+
+.figure__data th,
+.figure__data td {
+  padding: 0.3rem 1rem 0.3rem 0;
+  text-align: left;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--color-grid);
+}
+
+.figure__data td.num {
+  text-align: right;
+}
+
+/* --- Charts (components/charts/AnomalyBars.tsx). --- */
+.anomaly-chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "y plot"
+    ". x";
+  column-gap: 0.6rem;
+}
+
+.anomaly-chart--panel {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "plot";
+}
+
+.anomaly-chart__plot {
+  grid-area: plot;
+  position: relative;
+  height: var(--chart-height);
+}
+
+.anomaly-chart--focus .anomaly-chart__plot {
+  --chart-height: clamp(14rem, 9rem + 16vw, 21rem);
+}
+
+.anomaly-chart--panel .anomaly-chart__plot {
+  --chart-height: 3.75rem;
+}
+
+.anomaly-chart__plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.anomaly-chart__y {
+  grid-area: y;
+  position: relative;
+  width: 3.5ch;
+  min-width: 2.75rem;
+  color: var(--color-text-muted);
+}
+
+.anomaly-chart__y span,
+.anomaly-chart__x span,
+.anomaly-chart__notes span {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.anomaly-chart__y span {
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.anomaly-chart__x {
+  grid-area: x;
+  position: relative;
+  height: 1.6rem;
+  color: var(--color-text-muted);
+}
+
+.anomaly-chart__x span {
+  top: 0.3rem;
+  transform: translateX(-50%);
+}
+
+.anomaly-chart__grid {
+  stroke: var(--color-grid);
+  stroke-width: 1;
+}
+
+.anomaly-chart__zero {
+  stroke: var(--color-text);
+  stroke-width: 1;
+}
+
+.anomaly-chart__missing {
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.bar {
+  outline: none;
+  transform-box: fill-box;
+}
+
+.bar--deficit {
+  fill: var(--color-dry);
+}
+
+.bar--other {
+  fill: var(--color-neutral);
+}
+
+.bar--up {
+  transform-origin: 50% 100%;
+}
+
+.bar--down {
+  transform-origin: 50% 0%;
+}
+
+.bar:focus-visible {
+  stroke: var(--color-text);
+  stroke-width: 2;
+}
+
+.anomaly-chart__notes .note {
+  color: var(--color-text);
+  transform: translate(-50%, 0.3rem);
+}
+
+.anomaly-chart__notes .note--start {
+  transform: translate(-0.1rem, 0.3rem);
+}
+
+.anomaly-chart__notes .note--end {
+  transform: translate(calc(-100% + 0.4rem), 0.3rem);
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  max-width: min(18rem, 90vw);
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-text-muted);
+  background: var(--color-background);
+  color: var(--color-text);
+  transform: translate(-50%, calc(-100% - 0.5rem));
+}
+
+.chart-tooltip[hidden] {
+  display: none;
+}
+
+/* Bars grow into view once, only when motion is welcome; the inline script in the page head
+   adds .js and then .is-visible. Without JavaScript, or with reduced motion, they are drawn
+   complete from the start. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-animate] .bar {
+    transform: scaleY(0);
+    transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 12ms);
+  }
+
+  .js [data-animate].is-visible .bar {
+    transform: none;
+  }
+
+  .js [data-animate] .anomaly-chart__notes {
+    opacity: 0;
+    transition: opacity 0.3s ease 0.7s;
+  }
+
+  .js [data-animate].is-visible .anomaly-chart__notes {
+    opacity: 1;
+  }
+}
+
+/* --- Supporting numbers: right after the figure, a thin rule, colour where it means
+   something (dry for the drought years, wet for the water-yield association). --- */
+.support {
+  margin-top: clamp(2rem, 5vw, 3.5rem);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem var(--gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 56rem) {
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  border-top: 1px solid var(--color-text-muted);
+  padding-top: 0.9rem;
+}
+
+.stat .stat__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin: 0;
+}
+
+.stat .stat__number {
+  font-size: var(--size-stat);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.stat .stat__number--deficit {
+  color: var(--color-dry);
+}
+
+.stat .stat__number--wet {
+  color: var(--color-wet);
+}
+
+.stat__vs {
+  font-family: var(--font-mono);
+  font-feature-settings: var(--font-mono-features);
+  font-size: var(--size-meta);
+  color: var(--color-text-secondary);
+}
+
+.stat__text {
+  margin: 0.5rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+.stat__note {
+  margin: 0.6rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.stat__note > summary {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.stat__note > p {
+  margin: 0.5rem 0 0;
+}
+
+/* --- Search band: full width with its own background, title on the left, the field and
+   "Abrir ficha" on the right. --- */
+.search-band {
+  margin-top: clamp(2.5rem, 6vw, 4.5rem);
+  padding-block: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.search-band__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem var(--gutter);
+}
+
+@media (min-width: 48rem) {
+  .search-band__row {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: center;
+  }
+
+  .search-band__intro {
+    grid-column: 1 / span 6;
+  }
+
+  .search-band__row .search {
+    grid-column: 7 / -1;
+  }
+}
+
+.search-band h2 {
+  margin: 0 0 0.4rem;
+}
+
+.search-band__intro p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  max-width: 30rem;
+}
+
+.search__label {
+  display: block;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.search__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.search__field {
+  position: relative;
+  flex: 1;
+}
+
+.search__input {
+  width: 100%;
+  padding: 0.5rem 0;
+  border: 0;
+  border-bottom: 2px solid var(--color-text);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--size-deck);
+}
+
+.search__input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.search__button {
+  padding: 0.7rem 1.2rem;
+  border: 0;
+  background: var(--color-text);
+  color: var(--color-background);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search__options {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  border: 1px solid var(--color-text-muted);
+  background: var(--color-background);
+}
+
+.search__options[hidden] {
+  display: none;
+}
+
+.search__options [role="option"] {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.search__options [role="option"][aria-selected="true"],
+.search__options [role="option"]:hover {
+  background: var(--color-band);
+}
+
+.search__state {
+  color: var(--color-text-secondary);
+  font-size: var(--size-meta);
+}
+
+.search__help {
+  margin: 0.5rem 0 0;
+  color: var(--color-text-muted);
+}

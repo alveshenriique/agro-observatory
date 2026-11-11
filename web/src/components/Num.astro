@@ -1,0 +1,14 @@
+---
+// A number from the data package, with its provenance (lib/provenance.ts). The <data>
+// element carries the raw value for machines and the formatted text for people.
+import type { Sourced } from "../lib/sourced";
+
+interface Props {
+  n: Sourced;
+  class?: string;
+}
+
+const { n, class: className } = Astro.props;
+---
+
+<data class:list={["num", className]} value={String(n.value)} data-src={n.src}>{n.text}</data>

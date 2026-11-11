@@ -1,0 +1,233 @@
+---
+// Figura 1, after the approved draft: a compact header (number and title in one line, the
+// legend beside it), one reading sentence, the chart of the state where water balance and
+// yield move together the most, then the producing states on the same scale (the first ones
+// in view, the rest behind a disclosure that works without JavaScript). The source and the
+// data, method and anchor links close it, with a table of every value.
+import { scaleLinear } from "d3-scale";
+
+import { analysisModel, BAR_COLUMNS, SUMMARY, TABLE, worstYears } from "../lib/analysis";
+import { brdwgdShortCitation } from "../lib/citations";
+import { dataBasePath, loadDataFile } from "../lib/data";
+import { format } from "../lib/format";
+import { sourced, tick } from "../lib/sourced";
+import { bindShortWords } from "../lib/typography";
+import AnomalyBars, { type TickLabel } from "./charts/AnomalyBars";
+import Num from "./Num.astro";
+import StatePanel from "./StatePanel.astro";
+import Structural from "./Structural.astro";
+
+const WORST_LABELLED = 3;
+const PANELS_IN_VIEW = 6;
+const model = analysisModel();
+const years: [number, number] = [model.firstYear, model.lastYear];
+const first = sourced("analysis.json", "/headline/first_year", "year");
+const last = sourced("analysis.json", "/headline/last_year", "year");
+const brdwgd = brdwgdShortCitation();
+const stateCount = sourced("analysis.json", "/climate_summary_by_state/crop", "int", "count", model.crop);
+if (stateCount.value !== model.panels.length) {
+  throw new Error(`${stateCount.text} states in the summary, ${model.panels.length} panels`);
+}
+const inView = model.panels.slice(0, PANELS_IN_VIEW);
+const behind = model.panels.slice(PANELS_IN_VIEW);
+const title = bindShortWords(
+  `Rendimento da soja no ${model.focus.name} em relação à tendência,`,
+);
+
+const asTick = (value: number, kind: "within" | "member"): TickLabel => {
+  const t =
+    kind === "within"
+      ? tick("analysis.json", "/climate_yield_by_state/yield_anomaly", "spct", "within", value)
+      : tick("analysis.json", "/climate_yield_by_state/harvest_year", "year", "member", value);
+  return { value, text: t.text, src: t.src, carried: t.carried };
+};
+const yTicks = scaleLinear()
+  .domain(model.extent)
+  .ticks(5)
+  .filter((v) => v >= model.extent[0] && v <= model.extent[1])
+  .map((v) => asTick(v, "within"));
+const focusYears = new Set(model.focus.bars.map((bar) => bar.year));
+const xTicks = scaleLinear()
+  .domain(years)
+  .ticks(7)
+  .filter((v) => Number.isInteger(v) && focusYears.has(v))
+  .map((v) => asTick(v, "member"));
+
+const stat = (row: number, column: string, fmt: "int" | "pct") =>
+  sourced("analysis.json", `/climate_summary_by_state/${column}/${row}`, fmt);
+const focusDeficits = stat(model.focus.summaryRow, "water_deficit_years", "int");
+const focusHits = stat(model.focus.summaryRow, "water_deficit_hit_rate", "pct");
+const anyMissing = model.panels.some((panel) => panel.missingYears.length > 0);
+const SUMMARY_COLUMNS = [
+  "n_years|int",
+  "water_deficit_years|int",
+  "water_deficit_hit_rate|pct",
+  "negative_anomaly_share_all_years|pct",
+  "corr_water_balance_yield|dec2",
+].join(",");
+const summary = loadDataFile<{
+  climate_summary_by_state: Record<string, (number | string | null)[]>;
+}>("analysis.json").climate_summary_by_state;
+const cell = (column: string, row: number, fmt: "int" | "pct" | "dec2") => {
+  const value = summary[column]?.[row];
+  return value === null || value === undefined ? "sem dado" : format(value, fmt);
+};
+const panelProps = { years, extent: model.extent, deficitLabel: model.deficitLabel, first, last };
+---
+
+<figure id="figura-1" class="figure" aria-labelledby="figura-1-titulo">
+  <div class="figure__head">
+    <h2 id="figura-1-titulo" class="figure__title">
+      <Structural kind="figure" n={1} />. {title} <Num n={first} />–<Num n={last} />
+    </h2>
+    <ul class="legend small" aria-label="Legenda">
+      <li>
+        <span class="legend__swatch legend__swatch--deficit" aria-hidden="true"></span>
+        {model.deficitLabel}
+      </li>
+      <li>
+        <span class="legend__swatch legend__swatch--other" aria-hidden="true"></span>
+        demais anos
+      </li>
+      {
+        anyMissing && (
+          <li>
+            <span class="legend__swatch legend__swatch--missing" aria-hidden="true" />
+            sem dado
+          </li>
+        )
+      }
+    </ul>
+  </div>
+  <p class="figure__reading small">
+    Abaixo de zero, a safra rendeu menos que a tendência. Dos <Num n={focusDeficits} /> anos de
+    seca, <Num n={focusHits} /> ficaram abaixo dela; os piores estão rotulados.
+  </p>
+
+  <div class="figure__focus">
+    <AnomalyBars
+      label={`${model.focus.name}: rendimento da soja em relação à tendência, por safra. Use as setas para percorrer os anos.`}
+      bars={model.focus.bars}
+      missingYears={model.focus.missingYears}
+      years={years}
+      extent={model.extent}
+      deficitLabel={model.deficitLabel}
+      table={TABLE}
+      cols={BAR_COLUMNS}
+      variant="focus"
+      yTicks={yTicks}
+      xTicks={xTicks}
+      annotate={worstYears(model.focus, WORST_LABELLED)}
+    />
+  </div>
+
+  <section class="figure__panels" aria-labelledby="figura-1-ufs">
+    <h3 id="figura-1-ufs" class="figure__subtitle">
+      {bindShortWords("As UFs produtoras, na mesma escala")}
+    </h3>
+    <p class="figure__reading small">
+      Da associação mais forte para a mais fraca (correlação entre o balanço hídrico e o
+      rendimento).
+    </p>
+    <ul class="panels">
+      {inView.map((panel) => <StatePanel panel={panel} {...panelProps} />)}
+    </ul>
+    {
+      behind.length > 0 && (
+        <details class="panels-more">
+          <summary>
+            <span class="when-closed">
+              Mostrar as <Num n={stateCount} /> UFs
+            </span>
+            <span class="when-open">Mostrar menos UFs</span>
+          </summary>
+          <ul class="panels">
+            {behind.map((panel) => (
+              <StatePanel panel={panel} {...panelProps} />
+            ))}
+          </ul>
+        </details>
+      )
+    }
+  </section>
+
+  <figcaption class="figure__caption small">
+    <p>
+      <a href="/metodo/#fontes">Fonte</a>: IBGE (PAM), BR-DWGD ({brdwgd.author} et al., <Num
+        n={brdwgd.year}
+      />) e Conab (calendário de plantio e colheita). Associação, não causalidade.
+    </p>
+    <ul class="figure__links" aria-label="Links da figura">
+      <li><a href={`${dataBasePath}/analysis.json`} type="application/json">Dados</a></li>
+      <li><a href="/metodo/">Método</a></li>
+      <li><a href="#figura-1">Link</a></li>
+    </ul>
+  </figcaption>
+
+  <details class="figure__data">
+    <summary>Ver os dados da figura em tabela</summary>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Dados da figura em tabela">
+      <table data-src-table={SUMMARY} data-src-cols={SUMMARY_COLUMNS}>
+        <caption>
+          <Structural kind="table" n={1} /> · Soja por UF: anos de seca e anomalia de rendimento
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">UF</th>
+            <th scope="col">Anos com dado</th>
+            <th scope="col">Anos de seca</th>
+            <th scope="col">Abaixo da tendência, anos de seca</th>
+            <th scope="col">Abaixo da tendência, todos os anos</th>
+            <th scope="col">Correlação balanço hídrico × rendimento</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            model.panels.map((panel) => (
+              <tr data-row={panel.summaryRow}>
+                <th scope="row">{panel.name}</th>
+                <td class="num">{cell("n_years", panel.summaryRow, "int")}</td>
+                <td class="num">{cell("water_deficit_years", panel.summaryRow, "int")}</td>
+                <td class="num">{cell("water_deficit_hit_rate", panel.summaryRow, "pct")}</td>
+                <td class="num">
+                  {cell("negative_anomaly_share_all_years", panel.summaryRow, "pct")}
+                </td>
+                <td class="num">{cell("corr_water_balance_yield", panel.summaryRow, "dec2")}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      <table data-src-table={TABLE} data-src-cols={BAR_COLUMNS}>
+        <caption>
+          <Structural kind="table" n={2} /> · {model.focus.name}: rendimento em relação à tendência,
+          por safra
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Safra</th>
+            <th scope="col">Em relação à tendência</th>
+            <th scope="col">{model.deficitLabel}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            model.focus.bars.map((bar) => (
+              <tr data-row={bar.row}>
+                <th scope="row" class="num">
+                  {format(bar.year, "year")}
+                </th>
+                <td class="num">{format(bar.anomaly, "spct")}</td>
+                <td>{bar.deficit ? "sim" : "não"}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<script>
+  import "../scripts/chart-tooltip";
+</script>

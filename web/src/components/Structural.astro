@@ -1,0 +1,15 @@
+---
+// The number of a figure, table or note: editorial, not data (lib/structural.ts). The
+// provenance test requires it to read exactly "Figura N" (or Tabela, Nota), with N its
+// position on the page.
+import { type StructuralKind, structuralText } from "../lib/structural";
+
+interface Props {
+  kind: StructuralKind;
+  n: number;
+}
+
+const { kind, n } = Astro.props;
+---
+
+<span class="structural" data-structural={kind}>{structuralText(kind, n)}</span>

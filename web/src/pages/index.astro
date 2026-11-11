@@ -1,13 +1,165 @@
 ---
+// Análise, part A: the finding, the figure, the supporting numbers and the municipality
+// search, laid out after the approved draft (the "combined" version). No data number on
+// this page is typed by hand: each one cites its place in the data package
+// (lib/provenance.ts), and e2e/analysis.spec.ts fails on any number that does not.
+import "../styles/analysis.css";
+
+import AnalysisFigure from "../components/AnalysisFigure.astro";
+import MunicipalitySearch from "../components/MunicipalitySearch.astro";
+import Num from "../components/Num.astro";
 import Base from "../layouts/Base.astro";
+import { analysisModel } from "../lib/analysis";
+import { loadDataFile } from "../lib/data";
+import type { FormatName } from "../lib/format";
+import { sourced } from "../lib/sourced";
+import { tokens } from "../lib/tokens";
+import { bindShortWords } from "../lib/typography";
+import type { MethodJson } from "../types/data/method";
+
+const headline = (field: string, fmt: FormatName) =>
+  sourced("analysis.json", `/headline/${field}`, fmt);
+const hitRate = headline("below_trend_share_water_deficit_years", "pct");
+const baseRate = headline("below_trend_share_all_years", "pct");
+const deficitYears = headline("water_deficit_state_years", "int");
+const stateYears = headline("state_years", "int");
+const firstYear = headline("first_year", "year");
+const lastYear = headline("last_year", "year");
+const meanDeficit = headline("mean_anomaly_water_deficit_years", "spct");
+const meanOther = headline("mean_anomaly_other_years", "spct");
+const regionsPositive = headline("regions_with_positive_correlation", "int");
+const regions = headline("regions_with_correlation", "int");
+const pamFirstYear = sourced("catalog.json", "/series/first_year", "year", "min");
+
+const validation = loadDataFile<MethodJson>("method.json").validation;
+const comparedRow = validation.sidra_scope.category.indexOf("compared");
+const compared = sourced("method.json", `/validation/sidra_scope/cells/${comparedRow}`, "int");
+const documented = sourced("method.json", "/validation/sidra_discrepancies/status", "int", "count");
+const definition = sourced("method.json", "/validation/sidra_definition_pt", "text");
+
+const { deficitLabel } = analysisModel();
+const preloads = [
+  tokens.typefaces.numbers.files.find((file) => file.weight === 600),
+  tokens.typefaces.text.files.find((file) => file.weight === tokens.displayNumber.weight),
+].filter((file) => file !== undefined);
 ---
 
 <Base
   title="Análise"
-  description="A história da produção agrícola brasileira: área, produtividade e clima, da soja ao café."
+  description="Quando falta chuva na floração, a soja rende menos: anos de seca e rendimento da soja por UF, com os dados do IBGE e do BR-DWGD."
 >
-  <h1 class="page-title">Análise</h1>
-  <p class="placeholder">
-    Esta página contará a história e o achado principal do projeto. Em construção.
-  </p>
+  <Fragment slot="head">
+    {
+      preloads.map((file) => (
+        <link rel="preload" href={file.url} as="font" type="font/woff2" crossorigin />
+      ))
+    }
+    <script is:inline>
+      // Charts grow into view once; before this runs (or without JavaScript) they are drawn
+      // complete. With reduced motion they are never animated (see analysis.css).
+      document.documentElement.classList.add("js");
+      addEventListener("DOMContentLoaded", () => {
+        const charts = document.querySelectorAll("[data-animate]");
+        const show = (el) => el.classList.add("is-visible");
+        if (
+          matchMedia("(prefers-reduced-motion: reduce)").matches ||
+          !("IntersectionObserver" in window)
+        ) {
+          charts.forEach(show);
+          return;
+        }
+        const observer = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                show(entry.target);
+                observer.unobserve(entry.target);
+              }
+            }),
+          { threshold: 0.2 },
+        );
+        charts.forEach((chart) => observer.observe(chart));
+      });
+    </script>
+  </Fragment>
+
+  <article class="analysis">
+    <div class="container">
+      <header class="opening">
+        <p class="kicker opening__kicker">
+          Análise · Soja e clima, <Num n={firstYear} />–<Num n={lastYear} />
+        </p>
+        <h1 class="opening__title">
+          {bindShortWords("Quando falta chuva na floração, a soja rende menos")}
+        </h1>
+        <p class="deck opening__deck">
+          A produção agrícola municipal do IBGE desde <Num n={pamFirstYear} />, cruzada com o
+          clima diário de cada município.
+        </p>
+        <section class="finding opening__finding" aria-label="O achado principal">
+          <p class="finding__main"><Num n={hitRate} class="finding__number" /></p>
+          <p class="finding__text">
+            das <Num n={deficitYears} /> safras estaduais com {deficitLabel} ficaram abaixo da tendência
+            de rendimento. Em todas as <Num n={stateYears} />, com ou sem seca, foram{" "}
+            <strong><Num n={baseRate} class="finding__compare" /></strong>.
+          </p>
+          <p class="finding__note small">Uma safra estadual é a soja de uma UF num ano.</p>
+        </section>
+      </header>
+
+      <AnalysisFigure />
+
+      <section class="support" aria-labelledby="apoio-titulo">
+        <h2 id="apoio-titulo" class="visually-hidden">Os números por trás do achado</h2>
+        <ul class="stats">
+          <li class="stat">
+            <p class="stat__value">
+              <Num n={meanDeficit} class="stat__number stat__number--deficit" />
+              <span class="stat__vs">contra</span>
+              <Num n={meanOther} class="stat__number" />
+            </p>
+            <p class="stat__text">
+              Rendimento médio em relação à tendência nos anos de seca e nos demais, em{" "}
+              <Num n={stateYears} /> safras estaduais.
+            </p>
+          </li>
+          <li class="stat">
+            <p class="stat__value">
+              <Num n={regionsPositive} class="stat__number stat__number--wet" />
+              <span class="stat__vs">de</span>
+              <Num n={regions} class="stat__number stat__number--wet" />
+            </p>
+            <p class="stat__text">
+              Regiões imediatas em que mais água na floração acompanha rendimento maior.
+            </p>
+          </li>
+          <li class="stat">
+            <p class="stat__value"><Num n={compared} class="stat__number" /></p>
+            <p class="stat__text">
+              Células conferidas com os totais oficiais do IBGE. Todas batem, exceto <Num
+                n={documented}
+              /> diferenças documentadas.
+            </p>
+            <details class="stat__note small">
+              <summary>O que é uma célula comparada?</summary>
+              <p data-src={definition.src}>{definition.text}</p>
+            </details>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="band search-band" aria-labelledby="busca-titulo">
+      <div class="container search-band__row">
+        <div class="search-band__intro">
+          <h2 id="busca-titulo">{bindShortWords("E no seu município?")}</h2>
+          <p class="small">
+            Produção desde <Num n={pamFirstYear} />, comparação com a região e o estado, ranking e o
+            risco de seca na floração da região. A ficha de cada município está em construção.
+          </p>
+        </div>
+        <MunicipalitySearch />
+      </div>
+    </section>
+  </article>
 </Base>

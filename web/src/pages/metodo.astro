@@ -1,19 +1,76 @@
 ---
+import Num from "../components/Num.astro";
 import Base from "../layouts/Base.astro";
-import { formatDataVersion, release } from "../lib/data";
+import { fullCitations } from "../lib/citations";
+import { sourced } from "../lib/sourced";
+import { bindShortWords } from "../lib/typography";
 
-const publishedAt = formatDataVersion(release.data_version);
+const version = sourced("catalog.json", "/meta/data_version", "text");
+const generated = sourced("catalog.json", "/meta/data_version", "date");
+const citations = fullCitations();
 ---
 
 <Base
   title="Método"
-  description="Como o Atlas da Lavoura é feito: pipeline, validação externa e registro de correções."
+  description="Como o Atlas da Lavoura é feito: pipeline, validação externa, registro de correções e as fontes dos dados."
 >
-  <h1 class="page-title">Método</h1>
-  <p class="placeholder">
-    Esta página descreverá o pipeline, a validação e o registro de correções. Em construção.
-  </p>
-  <p class="placeholder">
-    Pacote de dados <code>{release.release_tag}</code>, publicado em {publishedAt}.
-  </p>
+  <div class="container grid">
+    <div class="col-text">
+      <h1 class="page-title">Método</h1>
+      <p class="placeholder">
+        Esta página descreverá o pipeline, a validação e o registro de correções. Em construção;
+        enquanto isso, a metodologia completa está na <a
+          href="https://github.com/alveshenriique/atlas-da-lavoura/blob/main/docs/METODOLOGIA.md"
+          >documentação do projeto</a
+        >.
+      </p>
+      <p class="placeholder">
+        Versão dos dados <Num n={version} />, gerada em <Num n={generated} />.
+      </p>
+
+      <section id="fontes" aria-labelledby="fontes-titulo">
+        <h2 id="fontes-titulo">Fontes e citações</h2>
+        <ol class="sources" data-structural="list">
+          {
+            citations.map((source) => (
+              <li class="source">
+                <h3 class="source__name">
+                  <span data-src={source.src("name_pt")}>{bindShortWords(source.name)}</span>
+                </h3>
+                <p class="source__citation" data-src={source.src("attribution_pt")}>
+                  {source.citation}
+                </p>
+                <dl class="source__facts">
+                  <div>
+                    <dt>Publicação</dt>
+                    <dd data-src={source.src("publisher")}>{source.publisher}</dd>
+                  </div>
+                  {source.period !== null && (
+                    <div>
+                      <dt>Período</dt>
+                      <dd data-src={source.src("reference_period_pt")}>{source.period}</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>Uso no projeto</dt>
+                    <dd data-src={source.src("used_for_pt")}>{source.usedFor}</dd>
+                  </div>
+                  <div>
+                    <dt>Condições de uso</dt>
+                    <dd data-src={source.src("terms_pt")}>{source.terms}</dd>
+                  </div>
+                  <div>
+                    <dt>Endereço</dt>
+                    <dd data-src={source.src("url")}>
+                      <a href={source.url}>{source.url}</a>
+                    </dd>
+                  </div>
+                </dl>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+    </div>
+  </div>
 </Base>
