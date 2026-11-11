@@ -1,0 +1,46 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": [
+        "http://localhost/",
+        "http://localhost/explorar/",
+        "http://localhost/municipios/",
+        "http://localhost/metodo/"
+      ],
+      "numberOfRuns": 3
+    },
+    "assert": {
+      "assertMatrix": [
+        {
+          "matchingUrlPattern": "^https?://[^/]+/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/explorar/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["warn", { "minScore": 0.8 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/municipios/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/metodo/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }]
+          }
+        }
+      ]
+    }
+  }
+}

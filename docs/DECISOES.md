@@ -248,3 +248,87 @@ Alternativas descartadas:
 - **Git LFS:** a cota grátis de banda, de 1 GiB por mês, acabaria com os downloads do CI.
 - **Gerar no deploy:** o CI não acessa o BigQuery, e no Postgres do CI só existe a amostra.
 
+
+## Produto web: fundação (fase 12)
+
+**Framework: Astro com ilhas React.** As páginas editoriais (Análise, Método) saem como
+HTML puro, com zero JavaScript, e a interatividade pesada (mapa do Explorar, ficha do
+município) entra como ilhas React que compartilham um único runtime (~69 KB gzip,
+medido). Alternativas descartadas: Next.js com exportação estática (174 KB gzip de
+JavaScript de base medidos num "hello world", e rotas dinâmicas exigem
+`generateStaticParams` com os 5.571 municípios) e React + Vite puro (69 KB de runtime
+também nas páginas de texto, que chegariam vazias antes da hidratação). O
+`@astrojs/react` está fixado em 7.1.4: a 7.1.6 importa um módulo que não existe no
+astro 7.4.
+
+**Mapa: canvas 2D com d3-geo (decidido; implementação na próxima etapa).** O stack
+d3-geo + topojson-client + d3-zoom + d3-selection + d3-delaunay mede ~42 KB gzip, contra
+~312 KB do MapLibre e ~224–263 KB do deck.gl, e é o único com projeção cônica de
+primeira classe, o padrão editorial para o Brasil. SVG puro (5.571 nós) foi descartado
+para o scrub de 52 anos por risco de travamento no celular; uma camada DOM fina sobre o
+canvas cuida de tooltip, foco e acessibilidade, e um botão "ver como tabela" oferece os
+mesmos dados em tabela ordenável e navegável por teclado.
+
+**Identidade no site: tokens gerados, não copiados.** `web/src/styles/tokens.css` e
+`web/src/lib/tokens.ts` são gerados de `identity.as_dict()` por
+`scripts/make_web_tokens.py` e commitados, para o build do site não depender de Python;
+um teste no pytest falha quando eles divergem da identidade. A escala do tipo vira rem
+preservando as razões (12 pt = 1 rem). A identidade ganhou uma escala sequencial para o
+coropleto, na família do cinza quente neutro (marrom significa seco e verde-azulado
+significa úmido, então nenhum dos dois pode codificar intensidade): 6 passos uniformes
+em CAM02-UCS, do bege claro ao quase preto no tema claro e o inverso no escuro,
+validados no checker (luminância monotônica, extremos ≥ 4,5:1, extremo forte ≥ 3:1
+contra o fundo e ΔE ≥ 15 entre vizinhos em cada deficiência simulada).
+
+**Dados no build: ponteiro + sha256.** O build baixa o tarball do release fixado em
+`data-release.json`, confere o sha256 e o tamanho e extrai para `public/data/<versão>/`;
+o tarball verificado fica num cache com chave pelo próprio sha256. Os tipos TypeScript
+são gerados dos JSON Schemas do contrato (json-schema-to-typescript) e uma validação de
+fumaça com ajv (draft 2020-12) confere um arquivo de cada esquema e as versões contra o
+ponteiro. Nada disso é commitado: os tipos não podem divergir dos schemas.
+
+**CI do site:** workflow próprio (`site.yml`) que roda em todo pull request, com o filtro
+de caminho dentro do workflow: um job `changes` detecta se `web/**`, o ponteiro de dados
+ou o próprio workflow mudaram, o job pesado `site` só roda nesse caso, e um agregador
+`site-status` sempre reporta — passa quando o `site` passou ou foi pulado pelo filtro e
+falha quando ele falhou. É o `site-status` que entra como required check na regra da
+`main`; um required check com filtro de caminho no gatilho ficaria "Pending" num PR que
+não toca o site e travaria o merge. Gates do job `site`: astro check, Vitest, build,
+Playwright + axe (zero violações WCAG 2.x A/AA, temas claro e escuro) e Lighthouse CI com
+orçamento por página: desktop com erro abaixo de 0,90 em todas; no celular, erro abaixo
+de 0,90 (Análise, Municípios e Método) e aviso abaixo de 0,80 no Explorar. O
+`astro preview` do Astro 7 vira daemon e não serve para o `webServer` do Playwright; os
+testes usam um servidor estático comum.
+
+**CI do site: navegador sem `--with-deps` e timeouts explícitos.** O job instala só o
+Chromium headless shell (`playwright install --only-shell chromium`), sem o
+`--with-deps` do exemplo da documentação do Playwright. O `--with-deps` roda `apt-get`
+contra os espelhos do Ubuntu: na primeira execução do PR, uma falha de DNS desses
+espelhos deixou o job 10 minutos parado tentando instalar fontes de fallback (chinês,
+japonês, tailandês) que o site não usa, enquanto todas as bibliotecas do Chromium já
+vinham na imagem `ubuntu-24.04`. Se uma imagem futura não tiver alguma, o navegador
+falha ao abrir, em segundos, dizendo qual falta. O Lighthouse CI usa o Google Chrome da
+própria imagem. O cache dos navegadores foi descartado porque a documentação do
+Playwright não o recomenda: restaurar leva quase o mesmo tempo que baixar. Quanto aos
+limites de tempo: o padrão do GitHub é 360 minutos por job, então cada passo de rede ou
+de navegador ganhou o seu próprio `timeout-minutes` (de 3 a 6 minutos), e o job tem um
+teto de 15. A restauração dos caches desiste de um segmento travado em 2 minutos, em vez
+de 10, e segue como cache miss. O download do pacote de dados aborta em 2 minutos. No
+CI, o Playwright roda com um worker e tem `globalTimeout` de 4 minutos, abaixo do limite
+do passo, para parar sozinho e ainda imprimir o relatório.
+
+**Dependências do site: Dependabot e vulnerabilidades atuais.** O Dependabot também
+acompanha o ecossistema npm de `web/`, semanalmente, com o mesmo prefixo de commit das
+actions. As vulnerabilidades que o `npm audit` acusa hoje (9 "high") estão todas na
+cadeia `basic-ftp`/`proxy-agent` dentro do Lighthouse/puppeteer — ferramentas que só
+rodam no CI e na máquina de desenvolvimento. Nada disso entra no site publicado, que é
+HTML estático sem dependência de runtime além das ilhas React empacotadas no build;
+`npm audit fix --force` rebaixaria o Lighthouse CI e foi descartado.
+
+**Hospedagem (decidido; configuração na etapa de publicação):** o site vai para a
+Cloudflare (Workers static assets), que no plano gratuito, sem cartão, serve estáticos
+sem limite de banda e aceita cabeçalhos de segurança via `_headers`; o GitHub Pages não
+tem cabeçalhos customizados e só permite um site por repositório, então o dbt docs
+permanece nele e passará a `docs.atlasdalavoura.com.br` quando o DNS do domínio estiver
+na Cloudflare (o registro.br não tem ALIAS/ANAME no apex, então os nameservers serão
+delegados ao DNS gratuito da Cloudflare).

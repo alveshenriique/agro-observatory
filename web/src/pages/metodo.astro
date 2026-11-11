@@ -1,0 +1,19 @@
+---
+import Base from "../layouts/Base.astro";
+import { formatDataVersion, release } from "../lib/data";
+
+const publishedAt = formatDataVersion(release.data_version);
+---
+
+<Base
+  title="Método"
+  description="Como o Atlas da Lavoura é feito: pipeline, validação externa e registro de correções."
+>
+  <h1 class="page-title">Método</h1>
+  <p class="placeholder">
+    Esta página descreverá o pipeline, a validação e o registro de correções. Em construção.
+  </p>
+  <p class="placeholder">
+    Pacote de dados <code>{release.release_tag}</code>, publicado em {publishedAt}.
+  </p>
+</Base>

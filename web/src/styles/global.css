@@ -1,0 +1,192 @@
+/* Global styles. Colours and type scale come from tokens.css, generated from the visual
+   identity (src/atlas_da_lavoura/viz/identity.py); nothing here hard-codes a colour. */
+
+/* IBM Plex Sans, Latin1 subset, self-hosted (public/fonts/, SIL OFL 1.1). The
+   unicode-range is the official one from the @ibm/plex-sans package. */
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSans-Regular-Latin1.woff2") format("woff2");
+  unicode-range: U+0000, U+000D, U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6,
+    U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030,
+    U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/IBMPlexSans-Bold-Latin1.woff2") format("woff2");
+  unicode-range: U+0000, U+000D, U+0020-007E, U+00A0-00FF, U+0131, U+0152-0153, U+02C6,
+    U+02DA, U+02DC, U+2013-2014, U+2018-201A, U+201C-201E, U+2020-2022, U+2026, U+2030,
+    U+2039-203A, U+2044, U+20AC, U+2122, U+2212, U+FB01-FB02;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  line-height: 1.6;
+  background: var(--color-background);
+  color: var(--color-text);
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  flex: 1;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+h1 {
+  font-size: var(--text-title);
+}
+
+h2 {
+  font-size: var(--text-subtitle);
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+.container {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--color-background);
+  padding: 0.5rem 1rem;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+.top-strip {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-grid);
+  padding-block: 0.35rem;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--color-grid);
+  padding-block: 0.9rem;
+}
+
+.site-header .container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem 1.5rem;
+}
+
+.brand {
+  font-size: var(--text-subtitle);
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+
+.site-nav {
+  margin-left: auto;
+}
+
+.site-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-nav a {
+  text-decoration: none;
+  color: var(--color-text-secondary);
+}
+
+.site-nav a:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.site-nav a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.page-title {
+  margin-block: 2rem 0.5rem;
+}
+
+.placeholder {
+  color: var(--color-text-secondary);
+}
+
+.site-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--color-grid);
+  padding-block: 1.5rem 2rem;
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+}
+
+.site-footer p {
+  margin-block: 0.4rem;
+}
+
+.site-footer ul {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding: 0;
+}
+
+.site-footer li {
+  margin-block: 0.15rem;
+}
+
+/* WCAG technique C39: with reduced motion, decorative animation is suppressed globally.
+   Meaningful animation (the map timeline) also consults this preference in JavaScript,
+   via the usePrefersReducedMotion hook. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

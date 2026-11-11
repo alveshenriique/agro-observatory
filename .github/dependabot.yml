@@ -8,3 +8,11 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+
+  # Keeps the site's npm packages up to date (web/package.json and lockfile).
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
