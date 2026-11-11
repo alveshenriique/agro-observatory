@@ -16,3 +16,12 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+    ignore:
+      # TypeScript 7.0 (the native Go port) ships without the compiler API that Astro's
+      # type checker needs: @astrojs/check accepts typescript ^5 || ^6, @volar/kit declares
+      # typescript <7, and `astro check` itself refuses 7.0. Patch and minor updates of
+      # TypeScript 6 still come through. Reevaluate when TypeScript 7.1 is stable and
+      # Astro's TypeScript 7 checker (@astrojs/ts-content-mapper, experimental in 0.2.0)
+      # is no longer experimental; then migrate the check and remove this entry.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
