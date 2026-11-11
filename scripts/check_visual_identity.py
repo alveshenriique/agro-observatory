@@ -101,7 +101,32 @@ def check() -> tuple[list[str], list[tuple]]:
             rows.append((theme, a.role, b.role, d, worst, required))
             if worst < vi.MIN_DISTINCT_DELTA_E:
                 failures.append(f"{theme}: {a.role} x {b.role} min ΔE {worst:.1f}")
+        failures.extend(check_sequential(theme, rows))
     return failures, rows
+
+
+def check_sequential(theme: str, rows: list[tuple]) -> list[str]:
+    """The choropleth ramp: monotonic, readable extremes, distinguishable neighbours."""
+    failures = []
+    bg = vi.BACKGROUND[theme]
+    steps = vi.SEQUENTIAL[theme]
+    lums = [luminance(s) for s in steps]
+    deltas = [b - a for a, b in itertools.pairwise(lums)]
+    if not (all(d < 0 for d in deltas) or all(d > 0 for d in deltas)):
+        failures.append(f"{theme}: sequential luminance is not monotonic")
+    extremes = contrast(steps[0], steps[-1])
+    if extremes < vi.MIN_TEXT_CONTRAST:
+        failures.append(f"{theme}: sequential extremes contrast {extremes:.2f}")
+    strong = contrast(steps[-1], bg)
+    if strong < vi.MIN_GRAPHIC_CONTRAST:
+        failures.append(f"{theme}: sequential strong end contrast {strong:.2f}")
+    for i, (a, b) in enumerate(itertools.pairwise(steps), start=1):
+        d = distances(a, b)
+        worst = min(d.values())
+        rows.append((theme, f"seq{i}", f"seq{i + 1}", d, worst, False))
+        if worst < vi.MIN_DISTINCT_DELTA_E:
+            failures.append(f"{theme}: sequential step {i} x {i + 1} min ΔE {worst:.1f}")
+    return failures
 
 
 def render_swatch(out: Path) -> None:

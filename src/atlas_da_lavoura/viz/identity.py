@@ -104,6 +104,20 @@ ALL_COLOURS = (*DATA_COLOURS, *TEXT_COLOURS, GRID)
 # Pairs that must stay distinguishable in every chart (the others are validated too).
 REQUIRED_DISTINCT_PAIRS = (("dry", "neutral"), ("hot", "cold"))
 
+# --- Sequential scale for the choropleth map (production intensity). -------------------------
+# Single-hue ramp in the warm-grey family of NEUTRAL: brown means dry and blue-green means wet
+# in this identity, so neither can encode intensity. It runs light-to-dark on the light theme
+# and dark-to-light on the dark theme, keeping the strong end at maximum contrast with the
+# background. Steps are evenly spaced in CAM02-UCS between the endpoints; a lightness-only
+# ramp keeps its ordering under every colour-vision deficiency. Validated by
+# scripts/check_visual_identity.py: monotonic luminance, extremes >= MIN_TEXT_CONTRAST,
+# strong end vs background >= MIN_GRAPHIC_CONTRAST and adjacent steps >= MIN_DISTINCT_DELTA_E
+# with normal vision and under each simulated deficiency.
+SEQUENTIAL = {
+    "light": ("#f2ede3", "#c1bcb2", "#969088", "#6e6961", "#49443d", "#241f19"),
+    "dark": ("#211d1a", "#47423e", "#6c6761", "#948e87", "#bfb9b0", "#f0eadf"),
+}
+
 # --- Typography. -----------------------------------------------------------------------------
 # IBM Plex Sans 3.005 (github.com/IBM/plex, SIL OFL 1.1), static files bundled with the licence.
 FONT_FAMILY = "IBM Plex Sans"
@@ -124,6 +138,12 @@ def as_dict() -> dict:
         "font_family": FONT_FAMILY,
         "type_scale_pt": TYPE_SCALE,
         "background": BACKGROUND,
+        "sequential": {
+            "name_pt": "escala sequencial (intensidade no mapa)",
+            "light": list(SEQUENTIAL["light"]),
+            "dark": list(SEQUENTIAL["dark"]),
+            "source": "rampa na família do neutro, passos uniformes em CAM02-UCS",
+        },
         "colours": [
             {
                 "role": c.role,
