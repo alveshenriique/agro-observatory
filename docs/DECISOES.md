@@ -119,6 +119,15 @@ O ajuste de sessão contorna o sintoma: com nested loops desligados, o planejado
 
 **Tipografia.** A fonte é a [IBM Plex Sans](https://github.com/IBM/plex) (IBM, versão 3.005, licença SIL Open Font License 1.1), nos arquivos estáticos regular e negrito publicados pela própria IBM no repositório oficial. A escolha saiu da comparação de três fontes abertas, todas em versões estáticas (um arquivo por peso) obtidas nos repositórios dos autores: Source Sans 3 (Adobe, `adobe-fonts/source-sans`), IBM Plex Sans (`IBM/plex`) e Inter (`rsms/inter`). As três têm todos os caracteres usados nos gráficos (acentos do português, sinal de menos, ≤, ×, ° e travessão), o zero sem traço, e o matplotlib seleciona corretamente o arquivo negrito de cada uma quando os dois pesos são registrados. A Plex é a que melhor separa os caracteres que se confundem em tamanho pequeno: o I maiúsculo tem barras em cima e embaixo e o l minúsculo tem cauda, enquanto na Inter o I e o l são idênticos. Ela também tem altura do x de 0,516 em, contra 0,486 na Source Sans 3, então o texto pequeno fica maior na mesma medida em pontos. A Inter tem a maior altura do x (0,546 em), mas é a mais larga e repete a ambiguidade do I e do l. Os arquivos ficam versionados em `src/atlas_da_lavoura/viz/fonts/`, com a licença, e são registrados no matplotlib quando o gráfico é gerado, então ele sai igual em qualquer máquina e no CI, sem instalar fonte no sistema. Alternativas descartadas: a Atkinson Hyperlegible (Braille Institute), usada numa primeira versão, distingue bem os caracteres, mas o zero com traço interno deixava anos e percentuais com aparência de defeito ("2ØØ5", "−2Ø"); Arial e Frutiger, recomendadas pelo IPCC, são proprietárias; as versões variáveis das três candidatas, as únicas no Google Fonts, não servem porque o matplotlib usa só a instância padrão e não seleciona o negrito; a DejaVu Sans, padrão do matplotlib, é larga e não distingue I de l.
 
+**Fundos do site (fase 12).** Os gráficos do README continuam sobre os fundos do GitHub (#ffffff e #0d1117). O site usa um branco quente, `#fcfbf9`, tirado do rascunho aprovado, e uma faixa de destaque com fundo próprio, `#efebe2`, para a busca de município. No tema escuro, o fundo é um quase preto quente, `#13110e`, com luminância próxima da do `#0d1117`, para as variantes escuras das cores manterem o contraste já validado; a faixa escura é `#1f1b16`. Os dois fundos entram em `identity.py` (`SITE_BACKGROUND` e `BAND`) e no checker: o texto precisa de 4,5:1 sobre os dois, e os dados e o extremo forte da rampa do mapa, de 3:1 sobre o fundo da página. No claro, o par mais justo é o cinza neutro das barras sobre o branco quente, com 3,01:1, e no texto o "texto discreto" sobre a faixa, com 4,97:1. No escuro, o mais justo é o marrom da seca sobre o fundo, com 4,24:1; esse marrom só aparece em marcas gráficas e no número grande, nunca em texto pequeno. Um teste confirma que o checker acusa uma faixa sem contraste. Alternativa descartada: manter o branco puro, que era a referência do GitHub, não a do produto.
+
+**Três vozes da mesma família (fase 12).** O site usa três famílias da IBM Plex, cada uma com uma função:
+- a Plex Serif, no peso Regular, nos títulos e no parágrafo de abertura, que faz parte da manchete;
+- a Plex Sans no texto corrido e na interface;
+- a Plex Mono nos números, rótulos e metadados (faixa superior, eixos, números de apoio, tabelas e números no meio das frases).
+
+A única exceção é o número de destaque da página (o 73% da Análise), em Plex Sans Bold, mais pesado que qualquer peso da Mono, como no rascunho aprovado. A identidade declara essa exceção em `DISPLAY_NUMBER`. As três famílias são da mesma superfamília e foram desenhadas juntas, então combinam sem disputar atenção, e a separação deixa claro o que é manchete, o que é texto e o que é dado. Os arquivos vêm dos releases oficiais da IBM (`@ibm/plex-serif@2.0.0`, fonte 3.006, e `@ibm/plex-mono@2.5.0`, fonte 2.005, com a mesma licença OFL da Sans) e entram só nos pesos usados: Serif Regular, Mono Regular e Mono SemiBold, além da Sans Regular e Bold. No repositório ficam os TTF, para o matplotlib, e no site os subsets Latin1 em woff2 (23, 18 e 18 KB). A Serif começou em SemiBold e passou para a Regular na comparação com o rascunho aprovado, em que os títulos são leves e grandes; continua sendo um peso só. A validação da Plex Sans virou automática para as cinco fontes, em `scripts/check_visual_identity.py`: nome da família, licença, todos os caracteres usados pelo projeto, zero sem traço nem ponto, I, l e 1 com contornos diferentes, altura do x de pelo menos 0,5 em (Sans 0,516, Serif 0,516, Mono 0,516) e o matplotlib escolhendo o arquivo certo para cada peso; o checker também exige que o peso do número de destaque exista entre os arquivos da Sans. Ela achou o único problema: o zero padrão da Plex Mono tem um ponto no meio. Isso deixaria anos e percentuais com a mesma aparência de defeito que eliminou a Atkinson Hyperlegible. O conjunto estilístico `ss04` da própria fonte troca esse zero pelo zero liso da Sans e da Serif (o recurso `zero` faria o oposto, cortando o zero) e não altera nenhum outro caractere. Por isso a identidade declara `ss04` como recurso sempre ligado na Mono, e o CSS gerado o aplica. Um teste confirma que o checker acusa o zero com ponto quando o `ss04` é retirado. Os `@font-face`, as pilhas de fontes e a escala de tamanhos do site (com `clamp()` entre 360 e 1.240 px de largura) são gerados de `identity.py` por `scripts/make_web_tokens.py`, com teste de drift. Alternativas descartadas: usar só a Sans com pesos diferentes, que não distingue o dado do texto; e uma serifa ou monoespaçada de outra família, que exigiria nova validação de legibilidade e criaria contraste de desenho sem função.
+
 **Uma fonte única para a identidade.** Cores (com papel, variantes e origem), tipografia, escala de tamanhos e o estilo do matplotlib ficam em `src/atlas_da_lavoura/viz/identity.py`. O estilo é gerado a partir das cores (`rc_params`, `apply_style`), e `as_dict()` exporta tudo num dicionário serializável em JSON, base para gerar o tema do Power BI. Alternativa descartada: arquivos `.mplstyle` com as cores escritas à mão, que repetiriam a paleta e deixariam o tema do Power BI sem uma origem comum. A fonte do dashboard será revista na fase do Power BI, porque o serviço tem a sua própria lista de fontes.
 
 **Desvios deliberados do guia do IPCC.** O título do gráfico do README é em negrito, embora o guia peça para evitar negrito: ali o gráfico funciona como manchete, não como figura de relatório. Os eixos não são pretos no tema escuro, onde preto não teria contraste. O neutro não vem das escalas do IPCC.
@@ -352,3 +361,124 @@ tem cabeçalhos customizados e só permite um site por repositório, então o db
 permanece nele e passará a `docs.atlasdalavoura.com.br` quando o DNS do domínio estiver
 na Cloudflare (o registro.br não tem ALIAS/ANAME no apex, então os nameservers serão
 delegados ao DNS gratuito da Cloudflare).
+
+## Produto web: página Análise (fase 12, etapa 3)
+
+**Nenhum número escrito à mão.** Todo número que o site imprime, inclusive no meio do
+texto, nos rótulos dos gráficos, nas tabelas e nos nomes acessíveis das barras, vem de um
+arquivo do pacote de dados e leva a sua origem na marcação: uma referência
+`arquivo#/ponteiro-json|formato` (por exemplo
+`analysis.json#/headline/below_trend_share_all_years|pct`), com operações explícitas
+quando o número não está pronto no arquivo (`max` do último ano das séries, `count` das
+diferenças documentadas, o ano entre parênteses de uma citação). As linhas de tabela
+citam o número da linha e as colunas, e os ticks dos eixos são conferidos contra a faixa
+da coluna desenhada (`within`) ou contra os anos que existem nela (`member`). O teste de
+ponta a ponta (`web/e2e/provenance.ts`) percorre o texto visível e os atributos lidos por
+leitores de tela, baixa os arquivos citados do próprio servidor, como o navegador faz, e
+falha se algum número não tiver origem ou não for exatamente o que o arquivo diz. Dois
+testes negativos provam que ele pega um número digitado e um número que diverge do
+arquivo. A página usa o mesmo código de referência (`web/src/lib/provenance.ts`) para
+gerar o texto, então o número e a origem não podem divergir. Alternativas descartadas: um
+lint que proíba literais numéricos no código, que não pega um número copiado errado num
+texto, e um teste de snapshot da página, que congela o valor sem provar de onde ele veio.
+
+**Números estruturais, à parte e marcados.** A regra vale para os números de dado e não
+retira elementos editoriais. A numeração de figuras, tabelas e notas ("Figura 1") e os
+marcadores das listas numeradas são números estruturais: não vêm dos dados, então não
+citam o pacote, mas são marcados explicitamente (`data-structural`) e seguem regras
+rígidas (`web/src/lib/structural.ts`). Uma marca contém só "Figura N", "Tabela N" ou
+"Nota N", com N igual à sua posição na página entre as marcas do mesmo tipo, sem elementos
+dentro e sem citar dados. Uma lista numerada é um `<ol data-structural="list">` que conta a
+partir de 1. Fora disso, o número é tratado como dado e precisa de referência, e número em
+conteúdo gerado por CSS é sempre recusado. Um teste negativo injeta disfarces na página e
+confere que todos são recusados: "Figura 88" fora da sequência, "73%" numa marca de nota,
+uma frase com dados numa marca de tabela, uma lista começando em 537, uma lista numerada
+sem marca e um "−9%" gerado por `::before`. A alternativa, uma lista de exceções por
+seletor CSS, deixaria passar qualquer número que caísse num elemento isento.
+
+**Gráficos em JSX, renderizados no build.** Os gráficos são componentes React com
+`d3-scale` e `d3-array` (4.0.3 e 3.2.5, publicados com procedência SLSA pelo GitHub
+Actions dos repositórios oficiais; conferido antes de instalar), mas são renderizados na
+geração do site, sem diretiva de cliente, e a página não carrega o runtime do React. A
+interatividade é pequena e vai em JavaScript próprio, embutido no HTML: o tooltip com
+foco itinerante (as setas, Home e End percorrem os anos; Esc fecha; WCAG 1.4.13), a busca
+de município e um script de poucas linhas que faz as barras crescerem quando entram na
+tela. Com movimento reduzido, ou sem JavaScript, as barras já aparecem prontas. O SVG
+desenha só barras e linhas e estica com a largura (`preserveAspectRatio="none"`, traços
+que não escalam); os ticks, as anotações dos piores anos e o tooltip são HTML posicionado
+em porcentagem, e por isso o texto mantém o tamanho no celular e na tela larga.
+Alternativas descartadas: uma ilha React hidratada (cerca de 69 KB de runtime para um
+tooltip e uma busca) e duas versões do SVG trocadas por media query, que duplicariam o
+DOM e os elementos focáveis. A figura traz ainda as tabelas com todos os valores, num
+`<details>`, como alternativa ao gráfico.
+
+**Grade e rodapé.** O conteúdo usa um contêiner de 1.240 px com grade de 12 colunas. O
+texto corrido fica limitado a cerca de 70 caracteres (38 rem, nas colunas centrais), e
+figuras, números de destaque e, nas próximas etapas, mapas ocupam a largura toda; a faixa
+superior e o cabeçalho acompanham a largura maior. O rodapé ficou enxuto: a nota de
+associação, a linha curta das fontes, com o ano da citação do BR-DWGD lido do catálogo,
+o link para as citações completas e a nota de projeto independente com a versão dos
+dados. As citações completas, lidas do catálogo, foram para a página Método, todas com a
+mesma estrutura (nome, citação, publicação, período, uso no projeto, condições de uso e
+endereço). A regra 8 do contrato de dados foi atualizada para esse arranjo.
+
+**Ajustes da revisão visual.** Todos os blocos (abertura, número de destaque, figura,
+números de apoio, busca) começam na primeira linha da grade, a mesma margem do nome do
+site no cabeçalho; o texto corrido continua limitado à largura de leitura. A monoespaçada
+ficou só para números e rótulos curtos (rótulo da seção, faixa superior, eixos, anotações,
+siglas). Legendas, subtítulos dos painéis, a linha de fonte, os links da figura, o tooltip
+e os textos de apoio voltaram para a sem serifa, com os números dentro deles ainda em
+monoespaçada. Os títulos usam `text-wrap: balance` (com uma largura máxima onde não há
+suporte) e prendem as palavras de uma ou duas letras à seguinte com espaço inseparável
+(`web/src/lib/typography.ts`), como pede a tipografia em português; um teste mede as
+linhas de cada título em quatro larguras de tela, e um caso negativo confirma que ele
+acusa uma palavra curta no fim da linha. O painel das UFs mostra as seis primeiras e
+recolhe as demais num `details` ("Mostrar as 16 UFs", com o 16 contado no pacote), que
+abre pelo teclado e funciona sem JavaScript; a tabela completa continua na figura. A
+definição de célula comparada foi para um "O que é uma célula comparada?" que abre ao
+clicar. Alternativa descartada para o painel: um botão com JavaScript, que deixaria as
+UFs inacessíveis sem script.
+
+**Comparação com o rascunho aprovado.** Os rascunhos de tela aprovados no planejamento
+são a referência visual de cada página. A Análise segue a versão combinada; Explorar,
+Município e Método seguirão as versões editoriais, com os mesmos ajustes da combinada.
+Os rascunhos ficam fora do repositório, e as marcações provisórias e os números deles não
+são reproduzidos. O que mudou na Análise:
+- **Abertura:** no computador, o título e o parágrafo de abertura ocupam as oito colunas
+  da esquerda e o número de destaque as quatro da direita, na altura do título e na
+  primeira tela, sob um filete na cor da seca; no celular, a ordem continua título,
+  parágrafo, número. O parágrafo encurtou para uma frase, já que o achado passou para o
+  bloco do 73%, com o 43% em negrito na frase. O título vai até 3,25 rem: é o maior tamanho
+  em que ele cabe em duas linhas nas oito colunas, com as palavras curtas presas.
+- **Figura:** o cabeçalho ficou compacto, com "Figura 1." e o título numa linha em sem
+  serifa negrito e a legenda ao lado, mais uma frase de leitura para o leitor não técnico
+  ("Abaixo de zero, a safra rendeu menos que a tendência"). As barras ficaram mais largas.
+  O rodapé da figura tem a fonte de um lado (a palavra "Fonte" leva às citações completas,
+  como pede a regra 8 do contrato) e "Dados · Método · Link" do outro; o "Link" aponta
+  para a âncora da própria figura (`#figura-1`), sem copiar nada para a área de
+  transferência. Os eixos, os rótulos dos piores anos e o painel das UFs continuam, embora
+  o rascunho não os tenha: sem eles o gráfico não se lê, e o painel foi pedido na etapa.
+  O cinza neutro da identidade fica, porque o cinza mais claro do rascunho não tem 3:1 de
+  contraste.
+- **Números de apoio:** vêm logo após a figura, com o título só para leitores de tela,
+  filete fino e frases curtas. A cor só aparece onde significa algo: o −9% na cor da
+  seca e o 197 de 217 no verde-azulado da água. O rótulo da seção e o menu ficam na cor
+  do texto, já que o marrom é só da seca.
+- **Busca:** fica numa faixa de largura total com fundo próprio, em duas colunas, com
+  campo sublinhado e o botão "Abrir ficha", que abre a melhor correspondência mesmo antes
+  de o índice terminar de carregar. Para a faixa ocupar a largura toda sem `100vw` (que
+  cria rolagem horizontal quando a barra de rolagem aparece), o `main` deixou de ser um
+  contêiner: cada página envolve o próprio conteúdo.
+- **Cabeçalho e rodapé:** a faixa superior separa os dados das fontes, o nome do site
+  cresceu em serifa e o menu ficou em caixa alta, com sublinhado na página atual. O
+  rodapé manteve o conteúdo aprovado, em duas colunas: o texto de um lado, Método e GitHub
+  do outro.
+
+**Busca e páginas de município.** A busca usa o padrão combobox da ARIA 1.2, ignora
+acentos e maiúsculas e ordena primeiro os nomes que começam com o texto digitado. O
+índice é o próprio `municipalities.json` do pacote, baixado só no primeiro foco do campo
+(61 KiB com gzip), para a página não pagar por ele na abertura. A alternativa, gerar no
+build um índice menor, criaria um segundo arquivo de dados fora do pacote versionado. A
+busca leva a `/municipio/<código IBGE>/`, uma das 5.571 páginas estáticas geradas no build
+a partir do índice, como a descoberta técnica previu. Elas ainda são esqueletos, com
+cerca de 2,6 KB cada, e o build completo leva cerca de 10 s.

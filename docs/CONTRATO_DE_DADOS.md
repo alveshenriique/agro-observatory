@@ -73,7 +73,12 @@ Todo arquivo começa com um bloco `meta`:
 5. **Sem dado aparece como sem dado.** `null` é mostrado como "sem dado", com cor e legenda próprias, nunca como zero.
 6. **Neutralidade.** Nada marca governos nem mandatos. Os arquivos não trazem esse tipo de informação, e o site não deve acrescentá-la.
 7. **Associação, não causalidade.** Os textos falam em anos que coincidem com quedas, nunca em quedas causadas pela seca.
-8. **Atribuição.** Onde aparecem dados de uma fonte, o site exibe o texto `attribution_pt` dela, que está em `catalog.sources`.
+8. **Atribuição.** O texto de citação de cada fonte (`attribution_pt`, em `catalog.sources`) aparece completo na página Método, numa lista com todas as fontes no mesmo formato. O rodapé de todas as páginas e as figuras citam as fontes na forma curta, por exemplo "BR-DWGD (Xavier et al., 2022)", com o ano lido da própria citação, e apontam para essa lista.
+9. **Números de dado só dos arquivos; números estruturais marcados.** O site distingue dois tipos de número:
+   - **De dado:** todo valor que descreve os dados, inclusive no meio do texto, nos eixos e nos nomes acessíveis. Vem de um arquivo deste pacote e cita a sua origem na marcação (`data-src` com `arquivo#/ponteiro|formato`, ou a linha de uma tabela colunar).
+   - **Estrutural:** a numeração editorial de figuras, tabelas e notas e os marcadores das listas numeradas. Não vem dos dados e é marcada explicitamente com `data-structural`. Uma marca de figura, tabela ou nota contém só o texto "Figura N", "Tabela N" ou "Nota N", em que N é a sua posição na página entre as marcas do mesmo tipo, e não cita dados. Uma lista numerada é um `<ol data-structural="list">` que conta a partir de 1, sem `start`, `reversed` nem `value`.
+
+   O teste de ponta a ponta do site relê os arquivos citados e falha se algum número de dado não tiver origem ou divergir dela. Também falha se uma marca estrutural fugir dessas regras, se uma lista numerada não estiver marcada ou se houver número em conteúdo gerado por CSS. Assim, um número de dado não passa disfarçado de estrutural (`web/src/lib/provenance.ts`, `web/src/lib/structural.ts`, `web/e2e/provenance.ts`).
 
 ## Arquivos
 
@@ -136,7 +141,7 @@ Não há rendimento: o mapa de rendimento usa as matrizes de produção e de ár
 - `validation.sidra_summary`: células comparadas com os agregados do IBGE, por nível, variável e situação; a soma é o número de células comparadas;
 - `validation.sidra_discrepancies`: as células documentadas, com o motivo;
 - `validation.sidra_scope`: a grade baixada do SIDRA dividida entre as células comparadas (`compared`) e as combinações sem valor publicado, por motivo (`coffee_breakdown_before_2012`, `planted_area_before_1988`, `state_year_without_value`), com uma descrição em português;
-- `validation.sidra_definition_pt`: a definição de célula comparada. O site a exibe ao lado do número, sempre que citá-lo;
+- `validation.sidra_definition_pt`: a definição de célula comparada. O site a exibe junto do número sempre que citá-lo, aberta ou num "O que é uma célula comparada?" que abre ao clicar;
 - `validation.conab`: a soja por UF e ano-safra, PAM contra Conab;
 - `dbt_tests`: o resumo dos testes do build publicado.
 
