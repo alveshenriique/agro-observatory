@@ -1,0 +1,110 @@
+name: site
+
+# Builds and checks the web product. The workflow runs on every pull request and push to
+# main so that `site-status` always reports; the heavy `site` job only runs when web/,
+# the data pointer or this workflow changed (detected by the `changes` job). Mark ONLY
+# `site-status` as a required check: it passes when `site` passed or was skipped by the
+# path filter, and fails when `site` failed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-24.04
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      # paths-filter uses the GitHub API on pull requests and git on pushes.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            web:
+              - "web/**"
+              - "data-release.json"
+              - ".github/workflows/site.yml"
+
+  site:
+    name: Build and check the site
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The verified tarball is cached by the pointer's content, so the release asset is
+      # downloaded again only when data-release.json changes.
+      - name: Restore the data package cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: web/.cache
+          key: site-data-${{ hashFiles('data-release.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download, verify (sha256) and extract the data package
+        run: npm run fetch-data
+
+      - name: Generate TypeScript types from the JSON Schemas
+        run: npm run generate-types
+
+      - name: Smoke-validate the data against the contract (ajv)
+        run: npm run validate-data
+
+      - name: Type-check (astro check)
+        run: npm run check
+
+      - name: Component tests (Vitest)
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end and accessibility tests (Playwright + axe)
+        run: npm run e2e
+
+      - name: Performance budget, desktop (Lighthouse CI)
+        run: npm run lhci:desktop
+
+      - name: Performance budget, mobile (Lighthouse CI)
+        run: npm run lhci:mobile
+
+  site-status:
+    # The aggregator that branch protection requires: always reports, passes on success
+    # or on a path-filter skip, fails when the site job failed or was cancelled.
+    name: site-status
+    needs: [changes, site]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Pass when the site job passed or was skipped
+        env:
+          SITE_RESULT: ${{ needs.site.result }}
+        run: |
+          echo "site job result: $SITE_RESULT"
+          case "$SITE_RESULT" in
+            success|skipped) exit 0 ;;
+            *) exit 1 ;;
+          esac
