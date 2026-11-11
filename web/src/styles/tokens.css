@@ -1,0 +1,48 @@
+/* Generated from src/atlas_da_lavoura/viz/identity.py by scripts/make_web_tokens.py. Do not edit by hand: run `uv run python scripts/make_web_tokens.py`. */
+:root {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --text-title: 1.4167rem;
+  --text-subtitle: 1.1667rem;
+  --text-panel-title: 1.0833rem;
+  --text-label: 1rem;
+  --text-small: 0.9167rem;
+  --color-background: #ffffff;
+  --color-dry: #895819;
+  --color-wet: #1a695f;
+  --color-hot: #67001f;
+  --color-cold: #4393c3;
+  --color-neutral: #9a9184;
+  --color-text: #1f1b16;
+  --color-text-secondary: #4d473f;
+  --color-text-muted: #6b6359;
+  --color-grid: #ece9e4;
+  --color-seq-1: #f2ede3;
+  --color-seq-2: #c1bcb2;
+  --color-seq-3: #969088;
+  --color-seq-4: #6e6961;
+  --color-seq-5: #49443d;
+  --color-seq-6: #241f19;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0d1117;
+    --color-dry: #a36c22;
+    --color-wet: #7cbab5;
+    --color-hot: #de8475;
+    --color-cold: #3379aa;
+    --color-neutral: #6e675d;
+    --color-text: #f2eee8;
+    --color-text-secondary: #cec7bc;
+    --color-text-muted: #a39b8f;
+    --color-grid: #222831;
+    --color-seq-1: #211d1a;
+    --color-seq-2: #47423e;
+    --color-seq-3: #6c6761;
+    --color-seq-4: #948e87;
+    --color-seq-5: #bfb9b0;
+    --color-seq-6: #f0eadf;
+    color-scheme: dark;
+  }
+}
