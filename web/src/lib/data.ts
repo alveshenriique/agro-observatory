@@ -27,18 +27,17 @@ export const release: DataRelease = JSON.parse(
 /** Base URL path (as served) of the pinned data version. */
 export const dataBasePath = `/data/${release.data_version}`;
 
+const cache = new Map<string, unknown>();
+
+/** A file of the pinned data package, parsed once per build. */
+export function loadDataFile<T>(name: string): T {
+  if (!cache.has(name)) {
+    const file = path.join(webRoot, "public", "data", release.data_version, name);
+    cache.set(name, JSON.parse(readFileSync(file, "utf-8")));
+  }
+  return cache.get(name) as T;
+}
+
 export function loadCatalog(): CatalogJson {
-  const file = path.join(webRoot, "public", "data", release.data_version, "catalog.json");
-  return JSON.parse(readFileSync(file, "utf-8")) as CatalogJson;
-}
-
-/** "2026.11.10" -> "10/11/2026" (the data version is the generation date). */
-export function formatDataVersion(version: string): string {
-  const [year, month, day] = version.split(".");
-  return `${day}/${month}/${year}`;
-}
-
-/** The latest harvest year published in any series ("até a safra 2025"). */
-export function latestHarvestYear(catalog: CatalogJson): number {
-  return Math.max(...catalog.series.last_year);
+  return loadDataFile<CatalogJson>("catalog.json");
 }

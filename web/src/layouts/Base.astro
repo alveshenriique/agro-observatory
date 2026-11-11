@@ -1,7 +1,12 @@
 ---
+import "../styles/fonts.css";
 import "../styles/tokens.css";
 import "../styles/global.css";
-import { latestHarvestYear, loadCatalog, release } from "../lib/data";
+import Num from "../components/Num.astro";
+import { brdwgdShortCitation } from "../lib/citations";
+import { dataBasePath, loadCatalog } from "../lib/data";
+import { sourced } from "../lib/sourced";
+import { tokens } from "../lib/tokens";
 
 interface Props {
   title: string;
@@ -11,47 +16,50 @@ interface Props {
 const { title, description } = Astro.props;
 const catalog = loadCatalog();
 // The strip shows how far the data goes, not when the package was built (that date is on
-// the Método page). "coletados em <mês>" will join it when the catalog publishes the
+// the Método page). "atualizado em <mês>" will join it when the catalog publishes the
 // collection date (proposed `sources[*].collected_at`; absent in the current contract).
-const harvestYear = latestHarvestYear(catalog);
-const sources = Object.values(catalog.sources);
+const harvestYear = sourced("catalog.json", "/series/last_year", "year", "max");
+const dataVersion = sourced("catalog.json", "/meta/data_version", "text");
+const brdwgd = brdwgdShortCitation();
+// Every page uses the serif (titles), the sans (text) and the mono (the strip); pages that
+// need another weight preload it through the "head" slot.
+const preloads = [
+  tokens.typefaces.text.files.find((file) => file.weight === 400),
+  tokens.typefaces.titles.files.find((file) => file.weight === 400),
+  tokens.typefaces.numbers.files.find((file) => file.weight === 400),
+].filter((file) => file !== undefined);
 const navigation = [
-  { href: "/", label: "Análise" },
-  { href: "/explorar/", label: "Explorar" },
-  { href: "/municipios/", label: "Municípios" },
-  { href: "/metodo/", label: "Método" },
+  { href: "/", label: "Análise", match: ["/"] },
+  { href: "/explorar/", label: "Explorar", match: ["/explorar/"] },
+  { href: "/municipios/", label: "Municípios", match: ["/municipios/", "/municipio/"] },
+  { href: "/metodo/", label: "Método", match: ["/metodo/"] },
 ];
 const current = Astro.url.pathname;
+const isCurrent = (match: string[]) =>
+  match.some((prefix) => (prefix === "/" ? current === "/" : current.startsWith(prefix)));
 ---
 
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-data-base={`${dataBasePath}/`}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
-    <link
-      rel="preload"
-      href="/fonts/IBMPlexSans-Regular-Latin1.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/IBMPlexSans-Bold-Latin1.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    {
+      preloads.map((file) => (
+        <link rel="preload" href={file.url} as="font" type="font/woff2" crossorigin />
+      ))
+    }
+    <slot name="head" />
     <title>{title} · Atlas da Lavoura</title>
   </head>
   <body>
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <div class="top-strip">
-      <div class="container">
-        Dados até a safra {harvestYear} · IBGE, Banco Central, BR-DWGD e Conab
+      <div class="container top-strip__row">
+        <span>Dados até a safra <Num n={harvestYear} /></span>
+        <span>IBGE · BR-DWGD · Banco Central · Conab</span>
       </div>
     </div>
     <header class="site-header">
@@ -62,7 +70,7 @@ const current = Astro.url.pathname;
             {
               navigation.map((item) => (
                 <li>
-                  <a href={item.href} aria-current={current === item.href ? "page" : undefined}>
+                  <a href={item.href} aria-current={isCurrent(item.match) ? "page" : undefined}>
                     {item.label}
                   </a>
                 </li>
@@ -72,24 +80,29 @@ const current = Astro.url.pathname;
         </nav>
       </div>
     </header>
-    <main id="conteudo" class="container">
+    <main id="conteudo">
       <slot />
     </main>
     <footer class="site-footer">
-      <div class="container">
-        <p>
-          As relações entre clima e rendimento apresentadas aqui são associações observadas nos
-          dados, não causalidade.
-        </p>
-        <ul>
-          {sources.map((source) => <li>{source.attribution_pt}</li>)}
+      <div class="container site-footer__row">
+        <div class="site-footer__text">
+          <p>
+            As relações entre clima e rendimento apresentadas aqui são associações observadas nos
+            dados, não causalidade.
+          </p>
+          <p>
+            Fontes: IBGE, Banco Central, BR-DWGD ({brdwgd.author} et al., <Num n={brdwgd.year} />)
+            e Conab. <a href="/metodo/#fontes">Citações completas na página Método</a>.
+          </p>
+          <p>
+            Atlas da Lavoura é um projeto independente, sem vínculo com as instituições citadas.
+            Versão dos dados <Num n={dataVersion} />.
+          </p>
+        </div>
+        <ul class="site-footer__links">
+          <li><a href="/metodo/">Método</a></li>
+          <li><a href={catalog.project.repository}>GitHub</a></li>
         </ul>
-        <p>
-          Atlas da Lavoura é um projeto independente, sem vínculo com as instituições citadas.
-          Dados da versão {release.data_version} · <a href={catalog.project.repository}
-            >código e método no GitHub</a
-          >.
-        </p>
       </div>
     </footer>
   </body>
