@@ -9,10 +9,19 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Every job has a timeout-minutes ceiling (GitHub's default is 360 minutes), kept at about
+# three times its slowest recent run with a 5-minute floor, and the network-bound steps
+# have tighter limits of their own, so a stall fails within minutes.
+env:
+  # setup-uv restores its cache with @actions/cache, which waits up to 10 minutes on a
+  # stalled segment by default; give up sooner and carry on as a cache miss.
+  SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2
+
 jobs:
   quality:
     name: Lint and unit tests
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -21,6 +30,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
+        timeout-minutes: 3
         run: uv sync --locked
 
       - name: Ruff check
@@ -35,6 +45,7 @@ jobs:
   data:
     name: Load sample and dbt build
     runs-on: ubuntu-24.04
+    timeout-minutes: 12
     services:
       postgres:
         image: postgres:18
@@ -64,12 +75,14 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
+        timeout-minutes: 3
         run: uv sync --locked
 
       - name: Load raw sample into Postgres
         run: uv run load-raw --data-dir tests/fixtures/raw
 
       - name: dbt deps
+        timeout-minutes: 3
         working-directory: dbt
         run: uv run dbt deps
 
