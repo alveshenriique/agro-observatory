@@ -1,0 +1,43 @@
+{
+  "name": "atlas-da-lavoura-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "fetch-data": "node scripts/fetch-data.mjs",
+    "generate-types": "node scripts/generate-types.mjs",
+    "validate-data": "node scripts/validate-data.mjs",
+    "setup": "npm run fetch-data && npm run generate-types && npm run validate-data",
+    "dev": "astro dev",
+    "check": "astro check",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "lhci:desktop": "lhci autorun --config=lighthouserc.desktop.json",
+    "lhci:mobile": "lhci autorun --config=lighthouserc.mobile.json"
+  },
+  "dependencies": {
+    "@astrojs/react": "7.1.4",
+    "astro": "^7.4.10",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@axe-core/playwright": "^4.14.0",
+    "@lhci/cli": "^0.16.0",
+    "@playwright/test": "^1.65.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "http-server": "^14.1.1",
+    "jsdom": "^29.1.1",
+    "json-schema-to-typescript": "^16.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.0"
+  }
+}

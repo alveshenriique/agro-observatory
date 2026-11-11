@@ -1,0 +1,55 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "url": [
+        "http://localhost/",
+        "http://localhost/explorar/",
+        "http://localhost/municipios/",
+        "http://localhost/metodo/"
+      ],
+      "numberOfRuns": 3,
+      "settings": { "preset": "desktop" }
+    },
+    "assert": {
+      "assertMatrix": [
+        {
+          "matchingUrlPattern": "^https?://[^/]+/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "resource-summary:script:size": ["error", { "maxNumericValue": 153600 }],
+            "resource-summary:total:size": ["error", { "maxNumericValue": 358400 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/explorar/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "resource-summary:script:size": ["error", { "maxNumericValue": 163840 }],
+            "resource-summary:total:size": ["error", { "maxNumericValue": 716800 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/municipios/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "resource-summary:script:size": ["error", { "maxNumericValue": 133120 }],
+            "resource-summary:total:size": ["error", { "maxNumericValue": 327680 }]
+          }
+        },
+        {
+          "matchingUrlPattern": ".*/metodo/$",
+          "aggregationMethod": "median",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "resource-summary:script:size": ["error", { "maxNumericValue": 30720 }],
+            "resource-summary:total:size": ["error", { "maxNumericValue": 122880 }]
+          }
+        }
+      ]
+    }
+  }
+}

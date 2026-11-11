@@ -1,0 +1,17 @@
+# Build and tooling output
+dist/
+.astro/
+node_modules/
+
+# Data package: downloaded and extracted by scripts/fetch-data.mjs from the release
+# pinned in ../data-release.json; never committed.
+.cache/
+public/data/
+
+# Types generated from the JSON Schemas by scripts/generate-types.mjs.
+src/types/data/
+
+# Test output
+test-results/
+playwright-report/
+.lighthouseci/

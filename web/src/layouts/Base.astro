@@ -1,0 +1,96 @@
+---
+import "../styles/tokens.css";
+import "../styles/global.css";
+import { latestHarvestYear, loadCatalog, release } from "../lib/data";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const catalog = loadCatalog();
+// The strip shows how far the data goes, not when the package was built (that date is on
+// the Método page). "coletados em <mês>" will join it when the catalog publishes the
+// collection date (proposed `sources[*].collected_at`; absent in the current contract).
+const harvestYear = latestHarvestYear(catalog);
+const sources = Object.values(catalog.sources);
+const navigation = [
+  { href: "/", label: "Análise" },
+  { href: "/explorar/", label: "Explorar" },
+  { href: "/municipios/", label: "Municípios" },
+  { href: "/metodo/", label: "Método" },
+];
+const current = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link
+      rel="preload"
+      href="/fonts/IBMPlexSans-Regular-Latin1.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/IBMPlexSans-Bold-Latin1.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>{title} · Atlas da Lavoura</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    <div class="top-strip">
+      <div class="container">
+        Dados até a safra {harvestYear} · IBGE, Banco Central, BR-DWGD e Conab
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="/">Atlas da Lavoura</a>
+        <nav class="site-nav" aria-label="Páginas do site">
+          <ul>
+            {
+              navigation.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={current === item.href ? "page" : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main id="conteudo" class="container">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <p>
+          As relações entre clima e rendimento apresentadas aqui são associações observadas nos
+          dados, não causalidade.
+        </p>
+        <ul>
+          {sources.map((source) => <li>{source.attribution_pt}</li>)}
+        </ul>
+        <p>
+          Atlas da Lavoura é um projeto independente, sem vínculo com as instituições citadas.
+          Dados da versão {release.data_version} · <a href={catalog.project.repository}
+            >código e método no GitHub</a
+          >.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
