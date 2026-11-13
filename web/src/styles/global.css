@@ -240,6 +240,29 @@ ol ::marker {
   background: var(--color-band);
 }
 
+/* --- Legends of charts and maps: a swatch and its label per item. --- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.legend__swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
 .skip-link {
   position: absolute;
   left: -999px;
