@@ -41,7 +41,7 @@ linha (`data-row`) com `data-src-table` e `data-src-cols` num elemento acima.
 A numeração de figuras, tabelas e notas é estrutural: use o componente `Structural`
 (`<Structural kind="figure" n={1} />` imprime "Figura 1"), com N na ordem em que aparece
 na página. Listas numeradas são `<ol data-structural="list">`, contando a partir de 1. O
-teste `e2e/analysis.spec.ts` (verificador em `e2e/provenance.ts`, regras em
+teste `e2e/analysis.spec.ts` (e `e2e/explore.spec.ts` para a legenda, o tooltip e a tabela do mapa; verificador em `e2e/provenance.ts`, regras em
 `src/lib/structural.ts`) falha se um número de dado não tiver origem ou divergir do
 arquivo, se uma marca estrutural fugir das regras ou se uma lista numerada não estiver
 marcada.
@@ -50,11 +50,12 @@ marcada.
 
 ```bash
 npm run check         # astro check (TypeScript estrito)
-npm test              # Vitest (formatos, procedência, busca, gráficos e hooks)
+npm test              # Vitest (formatos, procedência, círculos e classes do mapa, geometria, busca, gráficos e hooks)
 npm run build         # build de produção em dist/ (inclui as 5.571 páginas de município)
 npm run e2e           # Playwright + axe (WCAG 2.x A/AA) e procedência dos números, nos dois temas
 npm run lhci:desktop  # Lighthouse CI com orçamento por página (erro < 0,90)
 npm run lhci:mobile   # idem no celular (Explorar: aviso < 0,80)
+node scripts/measure-explore.mjs   # depois do build: tempos do mapa no celular simulado e no computador
 ```
 
 O CI roda tudo isso em `.github/workflows/site.yml`, apenas quando `web/` ou o ponteiro

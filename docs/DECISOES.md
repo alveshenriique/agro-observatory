@@ -482,3 +482,250 @@ build um índice menor, criaria um segundo arquivo de dados fora do pacote versi
 busca leva a `/municipio/<código IBGE>/`, uma das 5.571 páginas estáticas geradas no build
 a partir do índice, como a descoberta técnica previu. Elas ainda são esqueletos, com
 cerca de 2,6 KB cada, e o build completo leva cerca de 10 s.
+
+## Produto web: página Explorar, parte A (fase 12, etapa 4)
+
+**Totais em círculos proporcionais, rendimento em coroplético.** Um coroplético pinta o
+município inteiro, e o olho lê a área pintada, não o valor. Com valores absolutos, os
+municípios enormes com produção média dominam o mapa, e as regiões de municípios pequenos e
+muito produtivos somem: é o erro clássico do coroplético de totais. Por isso as medidas
+extensivas (produção, área colhida, área plantada ou em produção e valor real) são círculos
+proporcionais no ponto representativo de cada município, com a área do círculo
+proporcional ao valor (o raio vai pela raiz quadrada), sobre um mapa base neutro: os
+municípios com dado num tom claro, os sem dado hachurados e o contorno das UFs. Os
+círculos maiores são desenhados primeiro e os menores ficam por cima, e o ponteiro pega o
+círculo de cima. "Não produziu" é a ausência de círculo, e a legenda diz isso. A área
+plantada entrou nos círculos, embora o pedido citasse só produção, área colhida e valor,
+porque também é um total. O rendimento, uma razão (medida intensiva), continua no
+coroplético: a cor de cada município é o próprio valor por hectare e não depende do
+tamanho dele. Alternativas descartadas: a densidade (produção por km²), que é intensiva e
+caberia num coroplético, mas responde a outra pergunta (o quanto a cultura ocupa o
+território) e esconde os totais; o cartograma, que deforma a geografia que o leitor do agro
+usa para se achar; e o raio proporcional ao valor, que exagera as diferenças (o dobro do
+valor pareceria quatro vezes maior).
+
+**Escala fixa dos círculos.** Há uma escala por série e medida para toda a série
+temporal, como nas classes de cor: o maior valor de qualquer ano recebe o raio máximo (24
+unidades do mapa nacional, que tem 1.000 de largura), e os tamanhos se comparam de um ano
+para outro. A escala é em unidades do mapa, então o mesmo valor tem o mesmo tamanho no mapa
+e na legenda em qualquer largura de tela (a legenda é medida em unidades do contêiner,
+`cqi`, cuja largura é a do mapa), e uma UF em foco mantém o tamanho nacional. A legenda
+mostra três círculos de referência em valores redondos da sequência 1-2-5, próximos do
+máximo, de um quinto e de um vigésimo quinto dele (na soja, 2.000.000, 200.000 e
+50.000 t). Eles são citados no pacote pela operação `circle:k`, que o teste de procedência
+recalcula (`web/src/lib/symbols.ts`). Abaixo de 0,75 px, o raio fica nesse mínimo, para que
+todo município que produziu apareça; aí a área deixa de ser proporcional, o que só afeta
+círculos pequenos demais para comparar a olho (no celular, valores abaixo de cerca de 1% do
+máximo). Alternativa descartada: uma escala por ano, que impediria comparar anos. Abaixo da
+legenda, uma frase diz que a área de cada círculo é proporcional ao valor, na mesma escala
+em todos os anos.
+
+**Ponto representativo calculado na malha publicada.** O pacote de dados não traz o ponto
+representativo dos municípios: o do warehouse, calculado sobre a malha completa, não sai
+na camada de servir. O navegador o calcula sobre a malha publicada com o algoritmo do
+`representative_point` do shapely (o InteriorPointArea do GEOS): uma linha horizontal na
+altura do centro do polígono, desviada dos vértices, e o meio do trecho interno mais
+largo. O ponto fica sempre dentro do polígono desenhado, ao contrário do centroide de um
+município em forma de meia-lua, e também ancora o tooltip e a navegação pelo teclado.
+Alternativa descartada: publicar o ponto no pacote, o que exigiria um novo ciclo de dados
+no BigQuery para uma informação que a malha publicada já permite derivar.
+
+**Classes fixas do rendimento, por quantis de todos os anos.** O rendimento tem cinco
+classes, as mesmas em todos os anos, para que uma cor signifique o mesmo rendimento em
+1980 e em 2025. Os limites são os quintis de todos os valores positivos da série, com
+todos os anos juntos (cada classe reúne a mesma quantidade de pares município × ano),
+arredondados para a sequência 1-2-5 ou, se o arredondamento juntar dois limites, para dois
+ou três algarismos significativos. É o que acontece no rendimento, que varia pouco: na
+soja, os limites são 1.700, 2.200, 2.700 e 3.200 kg/ha. Os zeros, os nulos e os
+rendimentos de área colhida pequena demais (parágrafo seguinte) não entram no cálculo,
+porque têm estados próprios. O mesmo código (`web/src/lib/classify.ts`) calcula os
+limites no build, para a legenda, e no teste de procedência, que os recalcula a partir das
+matrizes publicadas (`explore/soybean/production_t.json#/values!ybreak:0|int`).
+Alternativas descartadas: intervalos iguais (os rendimentos extremos de municípios com
+área colhida mínima esticariam a escala), quebras naturais de Jenks (instáveis a cada
+versão dos dados) e quantis por ano (a cor deixaria de ser comparável entre anos). O custo
+das classes fixas é que, na soja, 69% dos municípios ficam na classe mais baixa em 1974 e
+61% na mais alta em 2025. É a tendência tecnológica, que o mapa deve mostrar; o contraste
+dentro de um mesmo ano diminui nos extremos, e a tabela traz os valores exatos. Por isso,
+junto à legenda, uma frase diz que as classes são as mesmas em todos os anos e que as
+cores podem ser comparadas de um ano para outro.
+
+**Área colhida mínima no rendimento: 100 ha.** No coroplético do rendimento, um município
+com poucos hectares colhidos entrava nas classes como qualquer outro e, se o município é
+grande, pintava um polígono enorme com um número frágil. Em 2025, São Gabriel da
+Cachoeira (AM), com 108.687 km², aparecia na classe de 3.200 kg/ha do milho com 5 ha
+colhidos. Abaixo de 100 ha, o município ganha um estado próprio, "área colhida pequena
+demais para comparar", com um pontilhado distinto da hachura de sem dado e dos tons da
+rampa, e fica fora das classes e do cálculo dos limites. O valor exato continua no tooltip
+e na tabela, com a indicação, e na tabela esses municípios vêm depois dos comparáveis
+quando ela é ordenada pelo valor. A regra vale para todas as séries. O limite saiu dos
+dados:
+- **Valores repetidos:** a parcela de anos em que o município repete exatamente o
+  rendimento do ano anterior (sinal de valor estimado, não medido) fica entre 25% e 47%
+  abaixo de 100 ha e cai pela metade acima dele (soja de 30% para 15%, milho de 29% para
+  17%, café beneficiado de 31% para 19%, comparando as faixas de 50 a 100 ha e de 100 ha ou
+  mais). Abaixo de 5 ha, na soja e no café, a variação mediana de um ano para outro é zero,
+  e quando muda, o rendimento costuma dobrar ou cair pela metade.
+- **Extremos:** na soja, a parcela na classe mais baixa é de 52% a 68% abaixo de 20 ha,
+  27% entre 50 e 100 ha e se estabiliza entre 17% e 24% a partir de 100 ha.
+- **Peso no mapa e nos totais:** na soja, no milho e no café beneficiado e arábica, os
+  municípios abaixo de 100 ha somam no máximo 1,2% da área colhida nos anos examinados,
+  mas pintam até 22% do território no milho (1990) e até 57% no café beneficiado (2025).
+
+Quantos municípios caem no estado próprio:
+
+| Série | Municípios abaixo de 100 ha (de quantos têm rendimento) |
+|---|---|
+| Soja | 1980: 151 de 1.020; 1990: 129 de 1.234; 2000: 148 de 1.446; 2010: 121 de 1.800; 2025: 101 de 2.641 |
+| Milho | 1980: 367 de 3.712; 1990: 447 de 4.242; 2000: 581 de 5.329; 2010: 712 de 5.176; 2025: 1.117 de 4.993 |
+| Café em coco | 1980: 630 de 1.753; 1990: 721 de 1.940; 2001: 944 de 2.007 |
+| Café beneficiado | 2010: 872 de 1.822; 2025: 666 de 1.361 |
+| Café arábica | 2025: 529 de 1.100 |
+| Café canéfora | 2025: 199 de 357 |
+
+Os limites das classes mudam pouco na soja (1.700, 2.200, 2.700 e 3.200 kg/ha, iguais) e
+mais no café, em que muitos municípios produzem pouco: no beneficiado, de 670, 960, 1.200 e
+1.600 para 750, 1.100, 1.300 e 1.700 kg/ha. Alternativas descartadas: um limite por série
+(mais difícil de explicar, e as medidas de estabilidade apontam para o mesmo valor em todas)
+e um limite relativo, como a área colhida sobre a área do município, que trataria o
+problema visual mas não a fragilidade do número. O valor de 100 ha não aparece na página,
+porque todo número impresso vem do pacote de dados e ele ainda não está lá; entra no
+catálogo no próximo ciclo de dados.
+
+**Três estados que nunca se confundem.** Sem dado é hachura nos dois modos: uma textura,
+que não se lê como um tom claro. No coroplético, o zero publicado é o primeiro passo da
+rampa, com o rótulo "não produziu", os valores ocupam os outros cinco passos e o
+rendimento de área colhida pequena tem o pontilhado; nos círculos, o zero é a ausência de
+círculo sobre o tom claro do mapa base. A rampa e os
+círculos usam os tons neutros da identidade, sem o marrom e o verde-azulado, que são da
+seca e da água. A linha de fonte diz "Municípios sem dado aparecem hachurados, e não como
+zero". O valor real da produção antes do primeiro ano deflacionado (1995 na soja e no
+milho) aparece hachurado, sem círculos, com "não disponível" na legenda e a nota "O valor
+real da produção só existe a partir de 1995", com o ano lido do arquivo. O café segue o
+contrato: cada série tem os seus anos (em coco até 2001, beneficiado desde 2002, arábica e
+canéfora desde 2012), a troca de série traz o ano para dentro da série e a linha do tempo
+só percorre os anos dela, então nenhuma visão atravessa 2002. O rendimento é calculado no
+navegador, como permite a regra 1 do contrato: produção ÷ área colhida do mesmo município e
+ano, em kg/ha. Ele é sem dado se faltar uma das duas, e zero só quando a produção e a área
+são zero. No tooltip e na tabela, o número cita a produção com a operação `yield`, e o
+teste refaz a conta com a matriz de área.
+
+**Projeção e geometria próprias.** O mapa usa a SIRGAS 2000 / Brazil Albers (EPSG:10857),
+a cônica de áreas iguais do IBGE para o país (paralelos −2° e −22°, meridiano −54°): a
+área de cada município na tela é proporcional à real, o que importa num mapa em que a cor
+cobre a superfície. A malha é decodificada por um leitor próprio do TopoJSON
+(`web/src/components/explore/geometry.ts`): cada arco é projetado uma vez, em unidades
+fixas do mapa, e redimensionar a tela vira uma transformação afim, sem projetar de novo. A
+fórmula é a do d3 (`geoConicEqualAreaRaw`), conferida num teste contra o
+`geoConicEqualArea` com os mesmos parâmetros. O motivo é o tempo: com o `geoPath` do d3 e o
+`topojson-client`, montar os caminhos levava 337 ms na máquina de desenvolvimento (1,6 s
+com a CPU 4× mais lenta), porque cada polígono era projetado três vezes (enquadramento,
+desenho e centroide), com reamostragem adaptativa, e tudo se repetia a cada
+redimensionamento. Agora a decodificação leva cerca de 50 ms e o preparo dos caminhos
+30 ms, fatiados em pedaços de até 12 ms, sem nenhuma tarefa longa na abertura. O
+`topojson-client` saiu das dependências. Alternativas descartadas: SVG com 5.571 caminhos
+(DOM pesado, e trocar o ano repintaria milhares de elementos) e WebGL (mais código e mais
+JavaScript, sem ganho nesse tamanho de malha).
+
+**Desenho em canvas, uma cor por vez, e o próximo ano adiantado.** Cada quadro tem uma
+base (o coroplético, ou o mapa neutro sob os círculos) que pinta os municípios agrupados
+por cor, num único caminho por cor, o que também elimina as frestas de antisserrilhado
+entre vizinhos da mesma classe. As divisas das UFs ganham um halo na cor do fundo, para
+aparecerem sobre o escuro e sobre o claro. Um canvas oculto, pintado na primeira passagem
+do ponteiro, identifica o município sob o cursor, confirmado por um teste de ponto no
+polígono, e os círculos são testados antes dele, do de cima para o de baixo. O município
+em destaque é um caminho SVG fino, também com halo, com o contorno do círculo quando há
+um, e a triangulação de Delaunay dos pontos representativos dá os vizinhos para as setas
+do teclado. O custo de uma base está na rasterização dos preenchimentos, não no desenho em
+si. Por isso, durante o play, a base do ano seguinte é desenhada e rasterizada no
+intervalo em que o mapa está parado, e um ano com a mesma base do anterior reaproveita o
+quadro. Cada passo dura 450 ms: as bases se misturam, e os círculos vão do raio antigo ao
+novo, redesenhados a cada quadro. O que pesa num quadro de círculos é a rasterização, que
+o navegador faz ao entregar o canvas (no celular simulado, até 45 ms por quadro com os
+2.600 círculos da soja). Os círculos de até 1,5 px, que são a maioria, não têm contorno e
+são os últimos da ordem, vão todos num único preenchimento. Durante o passo, eles entram
+de uma vez, no tamanho novo, numa camada pronta sobreposta aos demais, e só os maiores
+mudam de tamanho quadro a quadro. Abaixo de 1,5 px a mudança não se vê, e o último quadro
+desenha todos. Com movimento reduzido, o passo é um salto. A linha do tempo nunca começa sozinha.
+
+**Contorno primeiro, no próprio HTML.** No celular, a malha municipal (290 KiB) e a matriz
+da soja (189 KiB) levam alguns segundos para chegar. Para a página não ficar vazia nesse
+tempo, o contorno das UFs vai no HTML, gerado no build a partir de `geo/states.topo.json`,
+no mesmo enquadramento da malha municipal e em unidades inteiras do mapa (5,5 KB com
+gzip). A legenda já vinha no HTML. Os dois aparecem na primeira pintura, antes do
+JavaScript, e também sem ele, com uma nota explicando que o mapa precisa de JavaScript.
+Como as duas malhas são decodificadas no mesmo enquadramento e ajustadas à caixa pela
+mesma margem, o contorno cai onde os municípios serão desenhados: um teste compara a caixa
+do contorno com a dos pixels pintados no canvas, com tolerância de 3 px. Enquanto isso,
+uma etiqueta discreta no centro do mapa diz "Carregando os municípios…", numa região
+`role="status"`, com o grupo do mapa em `aria-busy`. Ela só aparece se a espera passar de
+300 ms, para o leitor de tela não anunciar cada passo do play, e a barrinha animada fica
+parada com movimento reduzido. Alternativa descartada: baixar o `geo/states.topo.json`
+(13 KiB) depois que a ilha inicia, o que faria o contorno esperar o JavaScript e mais uma
+ida à rede.
+
+**Pré-cargas de dados com prioridade baixa.** A malha municipal e a matriz da visão
+padrão são pré-carregadas no `<head>`, para chegarem junto com o script, mas com
+`fetchpriority="low"`: as fontes, o CSS e o JavaScript passam na frente, e a primeira
+pintura (título, contorno e legenda) não espera por elas. Com prioridade alta, o tempo
+observado era o mesmo (LCP de 62 a 69 ms), mas a simulação de rede lenta do Lighthouse
+contava os 529 KB dessas duas requisições como dependências do título, e a nota do celular
+oscilava entre 0,78 e 0,96 com a máquina livre. Com prioridade baixa, ela ficou em 0,97 nas
+três rodadas, e o mapa completo chegou cerca de 0,15 s depois no celular simulado.
+
+**Desempenho medido.** `web/scripts/measure-explore.mjs` serve o `dist/` com gzip e mede
+no perfil de celular do Lighthouse (412 px, DPR 1,75, CPU 4× mais lenta, 150 ms de
+latência e 1,6 Mbit/s) e num computador sem limitação. Os momentos em que o contorno e o
+mapa completo aparecem são os do primeiro quadro de pintura em que eles estão na tela.
+O Chromium dos testes não usa GPU, então a rasterização é por software e os números são
+pessimistas. A tabela traz a mediana de duas rodadas com a máquina quase livre (carga
+média de 1,4 a 2,3). Numa rodada com carga de 0,7, antes da troca de prioridade, o desenho
+da base no celular levou 16 ms e o mapa completo 4,1 s.
+
+| Medida | Celular simulado | Computador |
+|---|---|---|
+| Contorno das UFs e legenda na tela (primeira pintura) | 0,52 s | 0,04 s |
+| Mapa completo, círculos da produção | 4,3 s | 0,38 s |
+| Mapa completo, coroplético do rendimento (duas matrizes) | 4,9 s | 0,40 s |
+| Desenho da base (comandos) | 23 ms | 13 ms |
+| Desenho de todos os círculos (2.600 na soja) | 4,4 ms | 2 ms |
+| Desenho dos círculos num quadro de transição (só os maiores) | mediana 0,8 ms, p95 3,4 ms | mediana 0,6 ms, p95 1,5 ms |
+| Quadros das transições dos círculos (10 anos) | 277, p95 16,8 ms, no máximo 1 de 33 ms | 280, todos ≤ 16,8 ms |
+| Quadros das transições do coroplético (10 anos) | 280, todos ≤ 16,8 ms | 280, todos ≤ 16,8 ms |
+| Base do ano seguinte, adiantada e rasterizada | 0,25 s | 0,08 s |
+| Zoom em Minas Gerais (a maior malha estadual) | 1,5 s | 0,12 s |
+
+Antes da camada dos círculos pequenos, com a máquina carregada, mais da metade dos quadros
+das transições dos círculos no celular passava de 33 ms; com a máquina livre, cerca de 2%.
+
+**Lighthouse e a carga da máquina.** O Explorar ficou com desempenho de 0,97 no celular nas
+três rodadas (LCP de 911 ms, bloqueio de 194 a 205 ms) e de 0,99 a 1,00 no computador, com
+684 KiB transferidos de 700 KiB do orçamento e 89 KiB de JavaScript de 160 KiB. A queda
+para 0,84 numa rodada anterior teve duas causas. A primeira foi a carga da máquina: o
+Lighthouse mede a velocidade da CPU a cada rodada (`benchmarkIndex`), que estava em cerca
+de 1.000 naquelas rodadas e em cerca de 2.260 com a máquina livre, e o bloqueio da thread
+principal caiu de 392–624 ms para 200–266 ms. A segunda foi a estimativa do LCP, explicada
+no parágrafo das pré-cargas. Para caber no orçamento, a página não carrega a Sans Bold (a
+legenda e o tooltip usam tamanho e cor, não peso), os nomes dos municípios só chegam na
+primeira interação com o mapa ou a tabela e as malhas detalhadas só ao entrar numa UF.
+
+**Filtros na frase, visão na URL e tabela.** O título é a frase do rascunho, com cada
+filtro num `select` nativo dentro dela ("Cultura", "Medida" e "Ano" como nomes
+acessíveis), sublinhado na cor do texto e com a largura da opção escolhida
+(`field-sizing`, com medição em JavaScript onde não houver suporte). Nos totais, a frase
+pergunta onde ("Onde se produz soja, em toneladas, em 2025"); no rendimento, quanto rende
+("Quanto rende a soja, em quilos por hectare, em 2025"), com o artigo de cada cultura e os
+mesmos filtros. Em telas estreitas o título diminui com a largura, até o tamanho de título
+da identidade, e um teste percorre todas as culturas e medidas a 360 px e falha se a página
+ganhar rolagem horizontal. O `select` nativo
+funciona com teclado, leitor de tela e toque sem código extra; um menu próprio teria de
+reimplementar tudo isso. A visão vai para a URL (`?serie=soja&medida=producao&ano=2025&uf=MT`)
+com `replaceState`, sem encher o histórico, e é lida antes de qualquer download, então um
+link permanente baixa só os dados da sua visão. O mapa é um grupo focável: as setas
+percorrem os vizinhos, Enter abre a ficha, Esc fecha o tooltip (de qualquer ponto da
+página, WCAG 1.4.13), e cada município escolhido é anunciado numa região `aria-live`. No
+toque, o primeiro toque mostra o município e o segundo abre a ficha. "Ver como tabela"
+mostra os mesmos dados da visão, ordenáveis pelo nome ou pelo valor (`aria-sort`), numa
+região rolável que recebe foco, com cada nome levando à ficha. O espaço do painel lateral
+(série do Brasil e ranking das UFs) e da decomposição área × produtividade fica reservado
+para a parte B.
