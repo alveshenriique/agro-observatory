@@ -2,7 +2,7 @@
 // data-src attribute, so the page and its provenance can never disagree (see provenance.ts).
 import { loadDataFile } from "./data";
 import type { FormatName } from "./format";
-import { type Op, type Ref, renderRef, resolveRef, serializeRef } from "./provenance";
+import { type Op, type Ref, renderRef, resolveRef, serializeRef, siblingFile } from "./provenance";
 
 export interface Sourced {
   value: unknown;
@@ -21,7 +21,13 @@ export function sourced(
   if (op !== undefined) ref.op = op;
   if (arg !== undefined) ref.arg = arg;
   const doc = loadDataFile<unknown>(file);
-  return { value: resolveRef(ref, doc), text: renderRef(ref, doc), src: serializeRef(ref) };
+  const siblingName = siblingFile(ref);
+  const sibling = siblingName === null ? undefined : loadDataFile<unknown>(siblingName);
+  return {
+    value: resolveRef(ref, doc, undefined, sibling),
+    text: renderRef(ref, doc, undefined, sibling),
+    src: serializeRef(ref),
+  };
 }
 
 /** An axis tick: the value is checked to lie within (or be one of) the plotted column. */

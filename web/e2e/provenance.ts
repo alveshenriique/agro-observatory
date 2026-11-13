@@ -15,6 +15,7 @@ import {
   renderRef,
   rowRefs,
   serializeRef,
+  siblingFile,
 } from "../src/lib/provenance";
 import {
   checkNumberedLists,
@@ -204,9 +205,10 @@ export async function findUnsourcedNumbers(
     const allowed = new Set<string>();
     try {
       for (const ref of refs) {
-        for (const token of numberTokens(renderRef(ref, await load(ref.file), item.carried))) {
-          allowed.add(token);
-        }
+        const siblingName = siblingFile(ref);
+        const sibling = siblingName === null ? undefined : await load(siblingName);
+        const text = renderRef(ref, await load(ref.file), item.carried, sibling);
+        for (const token of numberTokens(text)) allowed.add(token);
       }
     } catch (error) {
       issues.push({ text: item.text, where: item.where, problem: String(error) });

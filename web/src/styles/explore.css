@@ -1,0 +1,586 @@
+/* Explorar, after the approved editorial draft with the combined direction's adjustments:
+   the title sentence carries the filters (underlined in the text colour; brown is only for
+   drought), the map takes eight columns and the side panel the other four (part B), the
+   timeline and the source line sit under the map, and the decomposition comes below. */
+
+.explore__head {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-items: end;
+  padding-block: clamp(1.5rem, 3vw, 2.5rem) 1.25rem;
+  border-bottom: 1px solid var(--color-grid);
+}
+
+.explore__head > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* The title is a sentence with its filters, longer than a headline: on narrow screens it
+   scales with the width (each filter and its comma never break), up to the identity's
+   headline size. */
+.explore__title {
+  margin: 0;
+  font-size: min(var(--size-headline), 7.2vw);
+}
+
+.explore__hint {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 64rem) {
+  .explore__title {
+    grid-column: 1 / span 8;
+  }
+
+  .explore__hint {
+    grid-column: 9 / span 4;
+    margin: 0;
+    padding-bottom: 0.4rem;
+  }
+}
+
+/* The filters read as words of the sentence: same font, an underline, no box. Where
+   field-sizing is missing, the island sizes each one to its chosen option. */
+/* A filter and the punctuation after it never part across lines. */
+.explore__term {
+  white-space: nowrap;
+}
+
+.explore__title select {
+  appearance: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid currentColor;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  field-sizing: content;
+  line-height: 1.1;
+}
+
+.explore__title select:hover {
+  border-bottom-color: var(--color-text-secondary);
+}
+
+.explore__title option {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.explore__body {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: 2rem;
+  padding-top: 1.5rem;
+}
+
+.explore__body > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* The map column is a size container: the legend's circles are sized in its units, the
+   width of the map, so they match the circles on the map at any screen width. */
+.explore__map-column {
+  container-type: inline-size;
+}
+
+@media (min-width: 64rem) {
+  .explore__map-column {
+    grid-column: 1 / span 8;
+  }
+
+  .explore__panel {
+    grid-column: 9 / span 4;
+  }
+}
+
+.explore__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.explore__focus {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.explore__focus .meta {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.explore__focus select,
+.explore__table-toggle {
+  font: inherit;
+  font-size: var(--size-meta);
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-text-muted);
+  border-radius: 0;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.explore__table-toggle[aria-expanded="true"] {
+  background: var(--color-band);
+}
+
+/* --- The map: a canvas, a thin highlight layer and the tooltip, all over the same box. --- */
+.explore__map {
+  position: relative;
+  width: 100%;
+}
+
+.explore__map:focus-visible {
+  outline-offset: 4px;
+}
+
+.explore__canvas,
+.explore__highlight {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.explore__canvas {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.explore__highlight {
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* A halo in the page colour under the line, so the outline reads over the darkest and
+   the lightest classes alike. */
+.explore__highlight path,
+.explore__highlight circle {
+  fill: none;
+  stroke: var(--color-text);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.explore__highlight .explore__highlight-halo {
+  stroke: var(--color-background);
+  stroke-width: 4.5;
+}
+
+.explore__highlight .explore__highlight-circle {
+  stroke-width: 1.5;
+}
+
+/* Under the circles, the municipality is outlined thinly: the halo would cut the circle. */
+.explore__highlight .explore__highlight-line--thin {
+  stroke-width: 1;
+}
+
+.explore__tooltip {
+  position: absolute;
+  z-index: 2;
+  max-width: min(18rem, 80vw);
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-text-muted);
+  background: var(--color-background);
+  color: var(--color-text);
+  transform: translate(-50%, calc(-100% - 0.75rem));
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* The flag of a yield from a small harvested area, in the tooltip and the table. */
+.explore__flag {
+  font-family: var(--font-sans);
+  color: var(--color-text-secondary);
+  white-space: normal;
+}
+
+.explore__flag--table {
+  display: block;
+  font-size: 0.85em;
+}
+
+/* The page loads no bold weight (transfer budget): the name stands out by size. */
+.explore__tooltip-name {
+  font-size: var(--size-body);
+  color: var(--color-text);
+}
+
+.explore__status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.explore__status--note {
+  inset: auto 0 0;
+  display: block;
+  text-align: center;
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+}
+
+/* --- First paint: the outline of the states, made at build time and in the HTML, stands in
+   for the map until its first frame; a quiet line says the municipalities are on the way.
+   Without JavaScript the line never shows (a <noscript> note explains instead). --- */
+.explore__outline,
+.explore__outline-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.explore-uf .explore__outline {
+  display: none;
+}
+
+.explore__outline path {
+  fill: none;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.explore__outline-borders {
+  stroke: var(--color-text-muted);
+  stroke-width: 0.6;
+}
+
+.explore__outline-country {
+  stroke: var(--color-text-secondary);
+  stroke-width: 0.9;
+}
+
+/* A small label at the centre of the map, where it is seen on any screen; it disappears
+   (empty) once the frame is on screen. */
+.explore__loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.7rem;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 45%, transparent);
+}
+
+/* Empty, it keeps no box but stays in the accessibility tree: a live region that is there
+   before its text changes is the one that gets announced. */
+.explore__loading:empty {
+  padding: 0;
+  border: 0;
+}
+
+html:not(.js) .explore__loading {
+  display: none;
+}
+
+.explore__loading-bar {
+  position: relative;
+  width: 2.5rem;
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-text-muted) 35%, transparent);
+}
+
+.explore__loading-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--color-text-secondary);
+  animation: explore-loading 1.2s ease-in-out infinite alternate;
+}
+
+/* With reduced motion the global rule stops the animation; the bar then stays still. */
+@keyframes explore-loading {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(150%);
+  }
+}
+
+.explore__noscript {
+  margin: 0.75rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+/* --- Legend: the fixed class limits, then "não produziu" and "sem dado". --- */
+.explore__legend {
+  margin-top: 1rem;
+}
+
+.explore__legend-title {
+  margin: 0 0 0.4rem;
+  color: var(--color-text);
+}
+
+.explore__legend-note {
+  margin: 0.5rem 0 0;
+  color: var(--color-text-muted);
+}
+
+/* Circles of the legend: the same fill and outline as on the map; the width (set inline in
+   cqi) is the circle's diameter on the map. */
+.legend--circles {
+  align-items: center;
+}
+
+.legend__circle {
+  flex: none;
+  overflow: visible;
+}
+
+.legend__circle circle {
+  fill: var(--color-seq-5);
+  fill-opacity: 0.82;
+  stroke: var(--color-background);
+  stroke-width: 0.04;
+}
+
+.explore__legend .legend__swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: none;
+}
+
+/* "Área colhida pequena demais para comparar": dots, as on the map (map-renderer.ts). */
+.legend__swatch--dots {
+  background-color: var(--color-seq-1);
+  background-image: radial-gradient(circle, var(--color-text-muted) 0 0.9px, transparent 1.1px);
+  background-size: 5px 5px;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px var(--color-text-muted);
+}
+
+.legend__swatch--seq1 {
+  background: var(--color-seq-1);
+  box-shadow: inset 0 0 0 1px var(--color-text-muted);
+}
+
+.legend__swatch--seq2 {
+  background: var(--color-seq-2);
+}
+
+.legend__swatch--seq3 {
+  background: var(--color-seq-3);
+}
+
+.legend__swatch--seq4 {
+  background: var(--color-seq-4);
+}
+
+.legend__swatch--seq5 {
+  background: var(--color-seq-5);
+}
+
+.legend__swatch--seq6 {
+  background: var(--color-seq-6);
+}
+
+/* Same hatching as the map (map-renderer.ts): a texture, never a light value. */
+.legend__swatch--hatch {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-text-muted) 0 1px,
+    var(--color-background) 1px 4.2px
+  );
+  box-shadow: inset 0 0 0 1px var(--color-text-muted);
+}
+
+/* --- Timeline. --- */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.timeline__play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-text);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.timeline__play svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.timeline__track {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline__labels {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-transform: uppercase;
+}
+
+.timeline__labels > span:nth-child(2) {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.timeline__labels > span:nth-child(2)::before,
+.timeline__labels > span:nth-child(2)::after {
+  content: "";
+  width: 1.75rem;
+  border-top: 1px solid var(--color-text-muted);
+}
+
+.timeline input[type="range"] {
+  width: 100%;
+  margin: 0.35rem 0 0;
+  accent-color: var(--color-text);
+  cursor: pointer;
+}
+
+/* --- Source line under the map, with the links on the right. --- */
+.explore__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-grid);
+  color: var(--color-text-secondary);
+}
+
+.explore__caption p {
+  margin: 0;
+}
+
+.explore__links {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* --- The table: the same data, sortable, in a scroll region of its own. --- */
+.explore__table {
+  margin-top: 2rem;
+}
+
+.explore__table-title {
+  font-size: var(--text-subtitle);
+  margin: 0 0 0.75rem;
+}
+
+.explore__table-scroll {
+  max-height: 32rem;
+  overflow: auto;
+  border-block: 1px solid var(--color-grid);
+}
+
+.explore__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--size-meta);
+}
+
+.explore__table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--color-background);
+  z-index: 1;
+}
+
+.explore__table th,
+.explore__table td {
+  padding: 0.35rem 1rem 0.35rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--color-grid);
+  font-weight: 400;
+}
+
+.explore__table th:last-child,
+.explore__table td:last-child {
+  text-align: right;
+  padding-right: 0.25rem;
+}
+
+.explore__table thead button {
+  font: inherit;
+  color: var(--color-text);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.explore__table th[aria-sort="ascending"] button::after {
+  content: " ↑";
+}
+
+.explore__table th[aria-sort="descending"] button::after {
+  content: " ↓";
+}
+
+/* --- Reserved for part B: the Brazil panel on the side, the decomposition below. The
+   space is held on wide screens only; on a phone the notes just follow the map. --- */
+.explore__panel {
+  border-top: 1px solid var(--color-text);
+  padding-top: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.explore-reserved {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-grid);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 64rem) {
+  .explore-reserved {
+    min-height: 12rem;
+  }
+}

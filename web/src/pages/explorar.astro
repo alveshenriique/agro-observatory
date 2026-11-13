@@ -1,17 +1,181 @@
 ---
+// Explorar, part A: the map of the municipalities with its timeline and filters, after the
+// approved editorial draft. The island (components/explore/ExploreView.tsx) fetches the
+// mesh and one matrix at a time; the build only works out what the island needs up front:
+// the series and their years, the states, the map's aspect ratio and the fixed scale of
+// every series and measure, which the legend cites and the provenance test recomputes from
+// the published files: proportional circles for the totals (lib/symbols.ts) and colour
+// classes for the yield (lib/classify.ts). The outline of the states goes into the HTML
+// itself, from geo/states.topo.json and in the frame of the municipal mesh, so it is on
+// screen with the first paint, before the script and the municipalities arrive. The side
+// panel (Brazil series, state ranking) and the area × yield decomposition come in part B;
+// their places are reserved.
+import "../styles/explore.css";
+
+import ExploreView, { type Scale, type SeriesOption } from "../components/explore/ExploreView";
+import { decodeTopology, linesToPath, MAP_PAD } from "../components/explore/geometry";
 import Base from "../layouts/Base.astro";
+import { classBreaks, pooledPositives, yieldMatrix } from "../lib/classify";
+import { dataBasePath, loadCatalog, loadDataFile } from "../lib/data";
+import { MEASURES } from "../lib/explore-view";
+import { circleScale } from "../lib/symbols";
+import { format } from "../lib/format";
+import { sourced } from "../lib/sourced";
+import type { GeoTopoJson } from "../types/data/topology";
+
+interface ExploreFile {
+  years: number[];
+  values: (number | null)[][];
+}
+interface Municipalities {
+  states: { state_abbreviation: string[]; state_name: string[] };
+}
+
+const catalog = loadCatalog();
+const s = catalog.series;
+const series: SeriesOption[] = s.series.map((id, i) => ({
+  id,
+  phrase: phraseOf(id),
+  article: id === "soybean" ? "a" : "o",
+  firstYear: Number(s.first_year[i]),
+  lastYear: Number(s.last_year[i]),
+  valueFirstYear: Number(s.real_value_first_year[i]),
+  areaPhrase: String(s.area_name_pt[i]),
+  areaLabel: capitalise(String(s.area_name_pt[i])),
+  productionUnit: String(s.production_unit_pt[i]),
+}));
+
+function phraseOf(id: string): string {
+  const phrases: Record<string, string> = {
+    soybean: "soja",
+    corn: "milho",
+    coffee_processed: "café beneficiado",
+    coffee_in_husk: "café em coco",
+    coffee_arabica: "café arábica",
+    coffee_canephora: "café canéfora",
+  };
+  const phrase = phrases[id];
+  if (!phrase) throw new Error(`no phrase for the series ${id}`);
+  return phrase;
+}
+
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// The fixed scale of each series and measure, pooled over every year of the series:
+// circles for the totals, colour classes for the yield.
+const matrix = (id: string, measure: string) =>
+  loadDataFile<ExploreFile>(`explore/${id}/${measure}.json`).values;
+const scales: Record<string, Record<string, Scale>> = {};
+for (const { id } of series) {
+  const own: Record<string, Scale> = {};
+  for (const measure of MEASURES) {
+    if (measure === "yield") {
+      const yields = yieldMatrix(matrix(id, "production_t"), matrix(id, "harvested_area_ha"), true);
+      own[measure] = { kind: "classes", breaks: classBreaks(pooledPositives(yields)) };
+    } else {
+      own[measure] = { kind: "circles", ...circleScale(pooledPositives(matrix(id, measure))) };
+    }
+  }
+  scales[id] = own;
+}
+
+// The states in focus, and the aspect ratio of the national map with its margin (the box
+// keeps it when a state is in focus, so the page never jumps).
+const states = loadDataFile<Municipalities>("municipalities.json").states;
+const ufs = states.state_abbreviation
+  .map((abbr, i) => ({ abbr, name: String(states.state_name[i]) }))
+  .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+const national = await decodeTopology(
+  loadDataFile<GeoTopoJson>("geo/municipalities.topo.json"),
+  "municipalities",
+  {},
+);
+const aspect =
+  Math.round(((national.height + 2 * MAP_PAD) / (national.width + 2 * MAP_PAD)) * 1000) / 1000;
+
+// The outline drawn first: the states' mesh, measured from the municipal mesh's frame, in
+// whole map units (under half a pixel at the widest map; the mesh is coarser than that).
+const outline = await decodeTopology(loadDataFile<GeoTopoJson>("geo/states.topo.json"), "states", {
+  borderGroup: (id) => id,
+  frame: national.frame,
+});
+const viewBox = [-MAP_PAD, -MAP_PAD, outline.width + 2 * MAP_PAD, outline.height + 2 * MAP_PAD]
+  .map((v) => Math.round(v * 10) / 10)
+  .join(" ");
+
+const soybean = series.find((option) => option.id === "soybean") ?? series[0];
+if (!soybean) throw new Error("the catalog has no series");
+const baseYear = sourced("catalog.json", "/parameters/deflation_base_year", "year");
+const municipalityCount = format(catalog.municipality_count, "int");
 ---
 
 <Base
   title="Explorar"
-  description="Mapa da produção agrícola dos municípios brasileiros, com linha do tempo e filtros de cultura, medida e ano."
+  description={`Mapa da produção agrícola dos ${municipalityCount} municípios brasileiros, com linha do tempo e filtros de cultura, medida e ano.`}
 >
-  <div class="container grid">
-    <div class="col-text">
-      <h1 class="page-title">Explorar</h1>
-      <p class="placeholder">
-        Esta página terá o mapa dos municípios com linha do tempo e filtros. Em construção.
+  <Fragment slot="head">
+    <script is:inline>
+      // Script-only parts (the loading line) show with the .js class; a link that zooms into
+      // a state hides the national outline before the island starts.
+      document.documentElement.classList.add("js");
+      if (new URLSearchParams(location.search).get("uf")) {
+        document.documentElement.classList.add("explore-uf");
+      }
+    </script>
+    <!-- The mesh and the default matrix start at once, but behind the fonts, the styles and
+         the script: the first paint (title, outline, legend) does not wait for them. -->
+    <link
+      rel="preload"
+      href={`${dataBasePath}/geo/municipalities.topo.json`}
+      as="fetch"
+      type="application/json"
+      crossorigin
+      fetchpriority="low"
+    />
+    <link
+      rel="preload"
+      href={`${dataBasePath}/explore/soybean/production_t.json`}
+      as="fetch"
+      type="application/json"
+      crossorigin
+      fetchpriority="low"
+    />
+  </Fragment>
+  <div class="container">
+    <ExploreView
+      client:load
+      dataBase={`${dataBasePath}/`}
+      series={series}
+      ufs={ufs}
+      scales={scales}
+      defaults={{ series: soybean.id, measure: "production_t", year: soybean.lastYear, uf: null }}
+      aspect={aspect}
+      baseYear={{ text: baseYear.text, src: baseYear.src }}
+      frame={national.frame}
+    >
+      <svg
+        class="explore__outline-svg"
+        viewBox={viewBox}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path class="explore__outline-borders" d={linesToPath(outline.borders, 0)}></path>
+        <path class="explore__outline-country" d={linesToPath(outline.outline, 0)}></path>
+      </svg>
+    </ExploreView>
+    <noscript>
+      <p class="explore__noscript small">
+        O mapa dos municípios precisa de JavaScript. Os mesmos dados estão nos arquivos do
+        pacote, indicados na página Método.
       </p>
-    </div>
+    </noscript>
+    <section class="explore-reserved" aria-label="Área × produtividade">
+      <p class="small">
+        A decomposição do crescimento em área e produtividade entra na próxima etapa.
+      </p>
+    </section>
   </div>
 </Base>

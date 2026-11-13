@@ -87,7 +87,7 @@ Os tamanhos com gzip abaixo são os da versão 2026.11.08, com os dados completo
 | Caminho | Esquema | Página | Quando carrega | gzip |
 |---|---|---|---|---|
 | `catalog.json` | catalog | todas | na abertura | 2 KiB |
-| `municipalities.json` | municipalities | Município; Explorar (nomes) | na abertura; no Explorar, na primeira busca | 61 KiB |
+| `municipalities.json` | municipalities | Município; Explorar (nomes) | na abertura; no Explorar, na primeira interação com o mapa ou a tabela | 61 KiB |
 | `analysis.json` | analysis | Análise | na abertura | 33 KiB |
 | `method.json` | method | Método | na abertura | 8 KiB |
 | `explore/<série>/<medida>.json` (24) | explore | Explorar | a soja na abertura; as demais ao trocar o filtro | 10 a 434 KiB (soja 189, milho 434) |
@@ -96,7 +96,7 @@ Os tamanhos com gzip abaixo são os da versão 2026.11.08, com os dados completo
 | `places/state/<UF>.json` (27) | place | Município | ao escolher o município | 3 a 5 KiB |
 | `places/region/<id>.json` (510) | place | Município | ao escolher o município | mediana 10 KiB, máximo 52 KiB |
 | `geo/municipalities.topo.json` | topology | Explorar | na abertura | 290 KiB |
-| `geo/states.topo.json` | topology | Análise | ao chegar à seção da fronteira | 13 KiB |
+| `geo/states.topo.json` | topology | Análise; Explorar (contorno inicial) | ao chegar à seção da fronteira; no Explorar, no build (o contorno vai no HTML) | 13 KiB |
 | `geo/state/<UF>.topo.json` (27) | topology | Explorar (zoom), Município (minimapa) | sob demanda | 1 a 151 KiB |
 | `manifest.json` | manifest | — (auditoria e release) | — | — |
 

@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 
 const pages = [
   { path: "/", heading: "Quando falta chuva na floração, a soja rende menos", nav: "Análise", title: "Análise" },
-  { path: "/explorar/", heading: "Explorar", nav: "Explorar", title: "Explorar" },
+  { path: "/explorar/", heading: /^Onde se produz soja\s*, em toneladas\s*, em\s+2025$/, nav: "Explorar", title: "Explorar" },
   { path: "/municipios/", heading: "Municípios", nav: "Municípios", title: "Municípios" },
   { path: "/metodo/", heading: "Método", nav: "Método", title: "Método" },
   { path: "/municipio/5107925/", heading: "Sorriso", nav: "Municípios", title: "Sorriso (MT)" },
