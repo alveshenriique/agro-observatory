@@ -11,14 +11,30 @@
 // items equal to it); `year` takes the year in parentheses
 // of a citation ("(2022)"); `within` and `member` check a value carried by the element
 // itself (data-value), for axis ticks: within the range of the plotted column, or one of
-// its values.
+// its values. For the Explorar map: `circle:k` is the k-th reference value of the circle
+// legend of a matrix (lib/symbols.ts), `ybreak:k` the k-th class limit of the yield, over
+// the municipalities with a comparable harvested area (lib/classify.ts), and `yield` the
+// yield of one cell; the yield operations read the production matrix of the reference and
+// the harvested-area matrix next to it (siblingFile), as the data contract defines yield.
 // Markup: `data-src` holds the references; rows of a columnar table use `data-row` on the
 // element and `data-src-table` + `data-src-cols` ("col|format,col|format") on an ancestor.
 // This module is shared by the build (Node) and the test runner, so it never touches the
 // file system or the DOM.
+import { classBreaks, type Matrix, pooledPositives, yieldCell, yieldMatrix } from "./classify";
 import { format, type FormatName } from "./format";
+import { circleScale } from "./symbols";
 
-export type Op = "max" | "min" | "sum" | "count" | "year" | "within" | "member";
+export type Op =
+  | "max"
+  | "min"
+  | "sum"
+  | "count"
+  | "year"
+  | "within"
+  | "member"
+  | "circle"
+  | "ybreak"
+  | "yield";
 
 export interface Ref {
   file: string;
@@ -28,7 +44,20 @@ export interface Ref {
   format: FormatName;
 }
 
-const OPS = new Set<string>(["max", "min", "sum", "count", "year", "within", "member"]);
+const OPS = new Set<string>([
+  "max",
+  "min",
+  "sum",
+  "count",
+  "year",
+  "within",
+  "member",
+  "circle",
+  "ybreak",
+  "yield",
+]);
+const WITH_ARGUMENT = new Set<string>(["count", "circle", "ybreak"]);
+const NEEDS_ARGUMENT = new Set<string>(["circle", "ybreak"]);
 const FORMATS = new Set<string>(["int", "year", "pct", "spct", "dec2", "sdec2", "text", "date"]);
 
 export function serializeRef(ref: Ref): string {
@@ -37,7 +66,7 @@ export function serializeRef(ref: Ref): string {
 }
 
 export function parseRef(text: string): Ref {
-  const match = /^([\w.-]+\.json)#(\/[^!|]*)(?:!(\w+)(?::([\w-]+))?)?\|(\w+)$/.exec(text.trim());
+  const match = /^([\w./-]+\.json)#(\/[^!|]*)(?:!(\w+)(?::([\w-]+))?)?\|(\w+)$/.exec(text.trim());
   if (!match) throw new Error(`malformed reference: ${text}`);
   const file = match[1] as string;
   const pointer = match[2] as string;
@@ -45,7 +74,12 @@ export function parseRef(text: string): Ref {
   const arg = match[4];
   const fmt = match[5] as string;
   if (op !== undefined && !OPS.has(op)) throw new Error(`unknown operation in ${text}`);
-  if (arg !== undefined && op !== "count") throw new Error(`only count takes an argument: ${text}`);
+  if (arg !== undefined && !WITH_ARGUMENT.has(op ?? "")) {
+    throw new Error(`this operation takes no argument: ${text}`);
+  }
+  if (arg === undefined && NEEDS_ARGUMENT.has(op ?? "")) {
+    throw new Error(`this operation needs an argument: ${text}`);
+  }
   if (!FORMATS.has(fmt)) throw new Error(`unknown format in ${text}`);
   const ref: Ref = { file, pointer, format: fmt as FormatName };
   if (op !== undefined) ref.op = op as Op;
@@ -93,9 +127,46 @@ function numbers(node: unknown, ref: Ref): number[] {
   return node.filter((v): v is number => typeof v === "number");
 }
 
-/** The raw value a reference stands for. `carried` is the element's data-value, if any. */
-export function resolveRef(ref: Ref, doc: unknown, carried?: string | null): unknown {
+/** The harvested-area file a yield reference also reads, next to its production file. */
+export function siblingFile(ref: Ref): string | null {
+  if (ref.op !== "yield" && ref.op !== "ybreak") return null;
+  const slash = ref.file.lastIndexOf("/");
+  return `${ref.file.slice(0, slash + 1)}harvested_area_ha.json`;
+}
+
+// Circle references and class limits are costly to recompute, and a matrix always gives
+// the same ones: one cache each, keyed by the matrix.
+const circleCache = new WeakMap<object, number[]>();
+const yieldBreaksCache = new WeakMap<object, number[]>();
+
+function matrixOf(node: unknown, ref: Ref): Matrix {
+  if (!Array.isArray(node) || !node.every(Array.isArray)) {
+    throw new Error(`${serializeRef(ref)} is not a matrix`);
+  }
+  return node as Matrix;
+}
+
+function nth(values: number[], ref: Ref): number {
+  const value = values[Number(ref.arg)];
+  if (value === undefined) throw new Error(`no value ${ref.arg} in ${serializeRef(ref)}`);
+  return value;
+}
+
+/**
+ * The raw value a reference stands for. `carried` is the element's data-value, if any;
+ * `sibling` is the document of siblingFile(ref), for the yield operations.
+ */
+export function resolveRef(
+  ref: Ref,
+  doc: unknown,
+  carried?: string | null,
+  sibling?: unknown,
+): unknown {
   const node = getPointer(doc, ref.pointer);
+  const siblingNode = () => {
+    if (sibling === undefined) throw new Error(`${serializeRef(ref)} needs ${siblingFile(ref)}`);
+    return getPointer(sibling, ref.pointer);
+  };
   switch (ref.op) {
     case undefined:
       return node;
@@ -129,12 +200,39 @@ export function resolveRef(ref: Ref, doc: unknown, carried?: string | null): unk
       if (!ok) throw new Error(`${value} is not ${ref.op} ${serializeRef(ref)}`);
       return value;
     }
+    case "circle": {
+      const matrix = matrixOf(node, ref);
+      let refs = circleCache.get(matrix);
+      if (!refs) circleCache.set(matrix, (refs = circleScale(pooledPositives(matrix)).refs));
+      return nth(refs, ref);
+    }
+    case "ybreak": {
+      const production = matrixOf(node, ref);
+      let breaks = yieldBreaksCache.get(production);
+      if (!breaks) {
+        const yields = yieldMatrix(production, matrixOf(siblingNode(), ref), true);
+        yieldBreaksCache.set(production, (breaks = classBreaks(pooledPositives(yields))));
+      }
+      return nth(breaks, ref);
+    }
+    case "yield": {
+      const production = typeof node === "number" ? node : null;
+      const area = siblingNode();
+      const value = yieldCell(production, typeof area === "number" ? area : null);
+      if (value === null) throw new Error(`${serializeRef(ref)} has no yield`);
+      return value;
+    }
   }
   throw new Error(`unknown operation in ${serializeRef(ref)}`);
 }
 
-export function renderRef(ref: Ref, doc: unknown, carried?: string | null): string {
-  return format(resolveRef(ref, doc, carried), ref.format);
+export function renderRef(
+  ref: Ref,
+  doc: unknown,
+  carried?: string | null,
+  sibling?: unknown,
+): string {
+  return format(resolveRef(ref, doc, carried, sibling), ref.format);
 }
 
 /** Number-like tokens of a text, as printed: "−9%", "19.237", "0,75", "1991". */
